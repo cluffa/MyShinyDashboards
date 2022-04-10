@@ -13,7 +13,7 @@ ui <- fluidPage(
     titlePanel("Weight Loss Trend"),
     dateRangeInput('dateRange',
         label = 'Date range input: yyyy-mm-dd',
-        start = as.POSIXct("2021-03-01"), end = Sys.Date() + 1
+        start = as.POSIXct("2022-03-28"), end = Sys.Date() + 1
     ),
     mainPanel(
         plotlyOutput("plot1"),
@@ -44,10 +44,11 @@ server <- function(input, output) {
         range <- get_date_range()
         df <- get_df()
         
-        graph <- ggplot() +
-            geom_abline(intercept = coefs[1], slope = coefs[2], color = "red", linetype = 2) +
-            geom_point(aes(date, weight), df) +
-            xlim(range)
+        graph <- ggplot(df, aes(date)) +
+            geom_point(aes(y = weight)) +
+            geom_abline(intercept = coefs[1], slope = coefs[2], color = "red", linetype = 2)
+            #geom_point(aes(y = lean), color = "blue", alpha = 0.5) +
+            #geom_point(aes(y = fat), color = "green", alpha = 0.5)
         
         graph %>% ggplotly()
     })
