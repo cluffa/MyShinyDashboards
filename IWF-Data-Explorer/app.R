@@ -85,28 +85,47 @@ ui <- fluidPage(
             type = "pills",
             tabPanel(
               "Info",
-              mainPanel(
+              fluidRow(
                 downloadButton("downloadathletes", "Download as .CSV"),
                 reactableOutput("table")
-              )
+              ),
             ),
             tabPanel(
               "Results",
-              mainPanel(
+              fluidRow(
                 downloadButton("downloadresults", "Download as .CSV"),
                 reactableOutput("tableResults")
               )
             ),
             tabPanel(
               "Graph",
-              mainPanel(
+              fluidRow(
                 selectizeInput(
                   inputId = "xAxis",
                   label = "Graph X axis",
-                  choices = c("Date", "Age"),
+                  choices = c("Date", "Age", "Bodyweight"),
                   selected = "Date"
                 ),
+                selectizeInput(
+                  inputId = "category",
+                  label = "Weight Category",
+                  choices = c("All", cats),
+                  selected = "All"
+                ),
                 plotOutput("graph")
+                
+              )
+            ),
+            tabPanel(
+              "Distribution",
+              fluidRow(
+                selectizeInput(
+                  inputId = "histx",
+                  label = "Graph X axis",
+                  choices = c("total_rank", "snatch_rank", "cleanjerk_rank", "age", "bw", "dq", "date", "snatch_best", "cleanjerk_best", "total"),
+                  selected = "Date"
+                ),
+                plotOutput("hist")
                 
               )
             )
@@ -115,7 +134,7 @@ ui <- fluidPage(
       ),
     ),
     tabPanel(
-      title = "By Event",
+      title = "Results By Event",
       sidebarLayout(
         sidebarPanel(
           width = 3,
@@ -137,8 +156,7 @@ ui <- fluidPage(
             "age_group",
             label = "Filter By Age Group",
             choices = age_groups,
-            multiple = TRUE,
-            options = list(placeholder = "Search Country Code e.g. 'USA'")
+            multiple = TRUE
           ),
           selectizeInput(
             "events",
@@ -199,7 +217,7 @@ server <- function(input, output) {
         if (length(input$country) > 0) iso_code %in% input$country else TRUE,
         if (length(input$city) > 0) city %in% input$city else TRUE,
         if (length(input$age_group) > 0) age_group %in% input$age_group else TRUE,
-        if (length(input$events) > 0) name %in% input$events else TRUE,
+        if (length(input$events) > 0) name %in% str_split(input$events, " \\(", simplify = TRUE)[,1] else TRUE,
         date >= input$date_range[1] & date <= input$date_range[2],
         if ("Olympics" %in% input$special) is_olympics == 1 else TRUE,
         if ("Universities" %in% input$special) is_university == 1 else TRUE,
@@ -266,27 +284,31 @@ server <- function(input, output) {
       remove_missing() %>% 
       distinct()
     
-    base <- ggplot(
-      df,
-      aes(x = if (xaxis() == "Date") date else age)
-      ) + theme_bw()
+    base <- df %>% 
+      filter(if (input$category != "All") category == input$category else TRUE) %>% 
+      ggplot(aes(x = if (xaxis() == "Date") date else if (xaxis() == "Age") age else bw)) +
+        theme_bw()
     
     base = base +
-      labs(shape = "Nation", color = "Athlete") +
-      xlab(if (xaxis() == "Date") "Date" else "Age") +
+      xlab(xaxis()) +
       ylab("Total (kg)")
       
    
     
     if (length(input$nations) > 0 & length(input$athletes) == 0) {
-      graph = base +
+      graph <- base +
         geom_point(aes(y = total, color = nation, shape = NULL), alpha = 0.5) +
-        geom_smooth(aes(y = total, color = nation))
-    } else if (length(input$nations) == 0 & length(input$athletes) == 0){
-      graph = base +
-        geom_bin2d(aes(y = total)) +
-        scale_fill_continuous(type = "viridis")
-
+        geom_smooth(aes(y = total, color = nation)) +
+        labs(color = "Country")
+    } else if (length(input$nations) == 0 & length(input$athletes) == 0) {
+      if (input$category == "All") {
+        graph <- base +
+          geom_bin2d(aes(y = total)) +
+          scale_fill_continuous(type = "viridis")
+      } else {
+        graph <- base +
+          geom_point(aes(y = total))
+      }
     } else {
       graph = base +
         geom_point(
@@ -296,10 +318,19 @@ server <- function(input, output) {
         geom_line(
           aes(y = total,
               color = if (length(input$athletes) > 0 & length(input$athletes) <= 10) name else NULL,
-              shape = if (length(input$nations) > 0 & length(input$nations) <= 10) nation else NULL))
+              shape = if (length(input$nations) > 0 & length(input$nations) <= 10) nation else NULL)) +
+        labs(color = "Athlete", shape = "Country")
     }
     
     graph
+  })
+  
+  output$hist <- renderPlot({
+    df = datasetInput()$results
+    ggplot(df, aes_string(input$histx)) +
+      theme_bw() +
+      geom_histogram(aes(y = ..density..)) +
+      geom_density()
   })
   
   output$downloadresults <- downloadHandler(
