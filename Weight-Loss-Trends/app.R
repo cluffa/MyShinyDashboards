@@ -16,7 +16,7 @@ ui <- fluidPage(
         start = as.POSIXct("2022-03-28"), end = Sys.Date() + 1
     ),
     mainPanel(
-        plotlyOutput("plot1"),
+        plotOutput("plot1"),
         verbatimTextOutput("summary"),
     )
 )
@@ -32,32 +32,36 @@ server <- function(input, output) {
     
     get_df <- reactive({
         range <- get_date_range()
-        df[df$date >= range[1] & df$date < range[2],]
+        df <- df[df$date >= range[1] & df$date < range[2],]
+        df$date = lubridate::floor_date(df$date, unit = "1 days")
+        df = aggregate(df, list(df$date), min)
     })
     
     get_model <- reactive({
-        lm(weight ~ date, get_df())
+        df = get_df()
+        lm(weight ~ date, df)
     })
     
-    output$plot1 <- renderPlotly({
-        coefs <- get_model()$coefficients
+    output$plot1 <- renderPlot({
+        model <- get_model()
+        coefs <- model$coefficients
         range <- get_date_range()
         df <- get_df()
         
-        graph <- ggplot(df, aes(date)) +
-            geom_point(aes(y = weight)) +
+        graph <- ggplot() +
+            geom_point(aes(y = weight, x = date), data = df) +
             geom_abline(intercept = coefs[1], slope = coefs[2], color = "red", linetype = 2)
-            #geom_point(aes(y = lean), color = "blue", alpha = 0.5) +
-            #geom_point(aes(y = fat), color = "green", alpha = 0.5)
+            
+        #graph <- graph + geom_point(aes(y = model$y, x = model$x), color = "blue")
         
-        graph %>% ggplotly()
+        graph + theme_bw()#%>% ggplotly()
     })
     
     output$summary <- renderPrint({
         model <- get_model()
         coef <- unname(model$coefficients[2])*86400
         
-        cat("Daily Trend:",coef,"","Weekly Trend:",coef*7, sep = "\n")
+        cat("Daily Trend:",coef,"","Weekly Trend:",coef*7,"","Model (date in seconds):", sep = "\n")
         
         summary(model)
     })
