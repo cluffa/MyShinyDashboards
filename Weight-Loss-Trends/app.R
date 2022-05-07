@@ -2,29 +2,32 @@
 library(shiny)
 library(ggplot2)
 library(googlesheets4)
-library(plotly)
-library(randomForest)
 
 gs4_auth("alexcluff16@gmail.com", cache = ".secrets")
 df <- read_sheet("151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0")
 
 ui <- fluidPage(mainPanel(
-
     titlePanel("Weight Loss Trend"),
-    dateRangeInput('dateRange',
-        label = 'Date range input: yyyy-mm-dd',
-        start = as.POSIXct("2022-03-28"), end = Sys.Date() + 1
+    fluidRow(
+        column(4,dateRangeInput('dateRange',
+            label = 'Date range input: yyyy-mm-dd',
+            start = as.POSIXct("2022-03-28"), end = Sys.Date() + 1
+        )),
+        column(4,
+            numericInput('goalwt',
+                label = "Goal Weight:",
+                value = 225,
+                min = 0,
+                max = 300,
+                step = 5
+            ),
+        ),
+        verbatimTextOutput("summary")
     ),
-    plotOutput("plot1"),
-    numericInput('goalwt',
-        label = "Goal Weight:",
-        value = 225,
-        min = 0,
-        max = 300,
-        step = 5
-    ),
-    verbatimTextOutput("summary"),
-    verbatimTextOutput("model")
+    fluidRow(
+        plotOutput("plot1"),
+        verbatimTextOutput("model")
+    )
 ))
 
 server <- function(input, output) {
@@ -37,7 +40,7 @@ server <- function(input, output) {
     
     get_df <- reactive({
         range <- get_date_range()
-        df <- df[df$date >= range[1] & df$date < range[2],]
+        df <- df[df$date >= range[1] & df$date <= range[2],]
         df$date = lubridate::floor_date(df$date, unit = "1 days")
         df = aggregate(df, list(df$date), min)
     })
