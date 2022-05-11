@@ -1,32 +1,30 @@
 # WEIGHT LOSS TRENDS
 library(shiny)
 library(ggplot2)
-library(googlesheets4)
 
-gs4_auth("alexcluff16@gmail.com", cache = ".secrets")
-df <- read_sheet("151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0")
+googlesheets4::gs4_auth("alexcluff16@gmail.com", cache = ".secrets")
+df <- googlesheets4::read_sheet("151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0")
 
 ui <- fluidPage(mainPanel(
     titlePanel("Weight Loss Trend"),
     fluidRow(
         column(4,dateRangeInput('dateRange',
-            label = 'Date range input: yyyy-mm-dd',
-            start = as.POSIXct("2022-03-28"), end = Sys.Date() + 1
+            label = 'Date Range:',
+            start = as.POSIXct("2022-03-28"), end = Sys.Date()
         )),
         column(4,
             numericInput('goalwt',
                 label = "Goal Weight:",
                 value = 225,
-                min = 0,
-                max = 300,
                 step = 5
             ),
         ),
-        verbatimTextOutput("summary")
     ),
     fluidRow(
+        verbatimTextOutput("summary"),
         plotOutput("plot1"),
-        verbatimTextOutput("model")
+        verbatimTextOutput("stats"),
+        #verbatimTextOutput("model")
     )
 ))
 
@@ -40,14 +38,16 @@ server <- function(input, output) {
     
     get_df <- reactive({
         range <- get_date_range()
-        df <- df[df$date >= range[1] & df$date <= range[2],]
-        df$date = lubridate::floor_date(df$date, unit = "1 days")
-        df = aggregate(df, list(df$date), min)
+        df <- df[df$date >= range[1] & df$date <= range[2] + 86400,]
+        df$date <- lubridate::floor_date(df$date, unit = "1 days")
+        df <- aggregate(df, list(df$date), function(x) min(x, na.rm = TRUE))
+        df$Group.1 <- NULL
+        df$unit <- NULL
+        df
     })
     
     get_model <- reactive({
-        df = get_df()
-        lm(weight ~ date, df)
+        lm(weight ~ date, get_df())
     })
     
     get_gw <- reactive({
@@ -60,13 +60,10 @@ server <- function(input, output) {
         range <- get_date_range()
         df <- get_df()
         
-        graph <- ggplot() +
-            geom_point(aes(y = weight, x = date), data = df) +
-            geom_abline(intercept = coefs[1], slope = coefs[2], color = "red", linetype = 2)
-            
-        #graph <- graph + geom_point(aes(y = model$y, x = model$x), color = "blue")
-        
-        graph + theme_bw()#%>% ggplotly()
+        ggplot2::ggplot() +
+            ggplot2::geom_point(aes(y = weight, x = date), data = df) +
+            ggplot2::geom_abline(intercept = coefs[1], slope = coefs[2], color = "red", linetype = 2) +
+            ggplot2::theme_bw()
     })
     
     output$summary <- renderPrint({
@@ -80,9 +77,29 @@ server <- function(input, output) {
         cat(
             "Daily Trend:", coef, "lbs/day",
             "\nWeekly Trend:", coef*7, "lbs/week",
-            "\nGoal Projection:", gw, "on", as.character(as.POSIXct.numeric(gwdate, origin = "1970-1-1"))
+            "\nGoal Projection:", gw, "on", as.character(as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1")))
             )
         
+    })
+    
+    output$stats <- renderPrint({
+        df <- get_df()
+        df$date <- as.character(df$date)
+        range <- get_date_range()
+        range <- as.Date(range)
+        range <- range[2] - range[1]
+        cat("STATS",
+            "\n\nDate range is", round(as.numeric(range)/7,1), "weeks",
+            "\nMin:", min(df$weight), "on", df$date[which.min(df$weight)],
+            "\nMax:", max(df$weight), "on", df$date[which.max(df$weight)],
+            "\nAverage:", round(mean(df$weight, na.rm = TRUE),1)
+            )
+        
+        
+        
+        cat("\n\nLast 5 weights:\n")
+        df <- df %>% dplyr::arrange(desc(date))
+        head(df,5)
     })
     
     output$model <- renderPrint({
