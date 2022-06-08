@@ -1,4 +1,6 @@
-# MyShinyServer
-for my Shiny projects
+# MyShinyDashboards
+Weight Loss Dashboard:  
+https://cluffa.shinyapps.io/Weight-Loss-Trends/
 
-[alex-server.rcluff.com:3838](http://alex-server.rcluff.com:3838)
+IWF Results:  
+https://cluffa.shinyapps.io/IWF-Data-Explorer/
