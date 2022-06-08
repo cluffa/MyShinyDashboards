@@ -1,4 +1,4 @@
-# MyShinyServer
+# MyShinyDashboards
 Weight Loss Dashboard:  
 https://cluffa.shinyapps.io/Weight-Loss-Trends/
 
