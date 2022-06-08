@@ -1,8 +1,8 @@
 # IWF DATA EXPLORER
 library(tidyverse)
-library(googlesheets4)
+#library(googlesheets4)
 library(reactable)
-library(plotly)
+#library(plotly)
 
 load(url(
   "https://github.com/cluffa/IWF_data/raw/main/all_data.Rdata"
@@ -12,11 +12,13 @@ names <- athletes %>%
   transmute(name = paste0(name, " (", date_of_birth, ")")) %>% 
   distinct() %>% 
   arrange(name)
+names <- names$name
 
 countries <- results %>% 
   select(nation) %>% 
   distinct() %>% 
   arrange(nation)
+countries <- countries$nation
 
 cats <- results %>% 
   select(category) %>% 
@@ -48,7 +50,7 @@ countries_event <- events %>%
 date_range <- c(min(events$date), max(events$date))
 
 ui <- fluidPage(
-  titlePanel("Explore IWF Event Results Data"),
+  titlePanel("IWF Event Results"),
   tabsetPanel(
     type = "pills",
     tabPanel(
@@ -59,17 +61,14 @@ ui <- fluidPage(
           selectizeInput(
             "nations",
             label = "Filter By Country (ISO code)",
-            choices = countries,
-            multiple = TRUE,
-            options = list(placeholder = "Search Country Code e.g. 'USA'")
+            choices = NULL,
+            multiple = TRUE
           ),
           selectizeInput(
             "athletes",
             label = "Filter By Athlete",
-            choices = names,
-            multiple = TRUE,
-            selected = c("ROGERS Martha (1995-08-23)", "NYE Katherine (1999-01-05)"),
-            options = list(placeholder = "Search Athlete (last first)")
+            choices = NULL,
+            multiple = TRUE
           ),
           h3("-- Notes --"),
           h4("For the results tab:"),
@@ -191,7 +190,13 @@ ui <- fluidPage(
 )
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output, session) {
+  updateSelectizeInput(session, "athletes", choices = names, server = TRUE,
+                       selected = c("ROGERS Martha (1995-08-23)", "NYE Katherine (1999-01-05)"),
+                       options = list(placeholder = "Search Athlete (last first)"))
+  updateSelectizeInput(session, "nations", choices = countries, server = TRUE,
+                       options = list(placeholder = "Search Country Code e.g. 'USA'"))
+  
   
   datasetInput <- reactive({
     athlete_ids <- athletes$athlete_id[if (length(input$athletes) > 0) athletes$name %in% str_split(input$athletes, " \\(", simplify = TRUE)[,1] else TRUE]
@@ -222,11 +227,6 @@ server <- function(input, output) {
         if ("Olympics" %in% input$special) is_olympics == 1 else TRUE,
         if ("Universities" %in% input$special) is_university == 1 else TRUE,
       )
-  })
-  
-  observe({
-    #updateSelectizeInput(inputId = 'nations', choices = c("test", "asdf"), server = TRUE)
-    #updateSelectizeInput(inputId = 'athletes', choices = c("test", "asdf"), server = TRUE)
   })
   
   output$summary <- renderPrint({

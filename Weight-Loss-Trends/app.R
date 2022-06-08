@@ -1,4 +1,4 @@
-# WEIGHT LOSS TRENDS
+# Weight Loss Trend
 library(shiny)
 library(ggplot2)
 
@@ -35,14 +35,19 @@ server <- function(input, output) {
             as.POSIXct(input$dateRange[2])
         )
     })
-    
-    get_df <- reactive({
-        range <- get_date_range()
-        df <- df[df$date >= range[1] & df$date <= range[2] + 86400,]
+    get_data <- reactive({
         df$date <- lubridate::floor_date(df$date, unit = "1 days")
         df <- aggregate(df, list(df$date), function(x) min(x, na.rm = TRUE))
         df$Group.1 <- NULL
         df$unit <- NULL
+        df <- dplyr::arrange(df,desc(date))
+        df
+    })
+    
+    get_df <- reactive({
+        range <- get_date_range()
+        df <- get_data()
+        df <- df[df$date >= range[1] & df$date <= range[2] + 86400,]
         df
     })
     
@@ -84,21 +89,36 @@ server <- function(input, output) {
     
     output$stats <- renderPrint({
         df <- get_df()
+        full_df <- get_data()
+        
+        range_52 <- c(Sys.Date() - (52*7), Sys.Date() + 1)
+        df_52 <- full_df[full_df$date >= range_52[1] & full_df$date <= range_52[2],]
+        
         df$date <- as.character(df$date)
+        full_df$date <- as.character(full_df$date)
+        df_52$date <- as.character(df_52$date)
+        
         range <- get_date_range()
         range <- as.Date(range)
         range <- range[2] - range[1]
-        cat("STATS",
-            "\n\nDate range is", round(as.numeric(range)/7,1), "weeks",
-            "\nMin:", min(df$weight), "on", df$date[which.min(df$weight)],
-            "\nMax:", max(df$weight), "on", df$date[which.max(df$weight)],
-            "\nAverage:", round(mean(df$weight, na.rm = TRUE),1)
+        suppressWarnings(
+            cat("STATS\n", "___________________________________________",
+                "\n   Date Range:", round(as.numeric(range)/7,1), "weeks",
+                "\n    Range Low:", min(df$weight), "on", df$date[which.min(df$weight)],
+                "\n   Range High:", max(df$weight), "on", df$date[which.max(df$weight)],
+                "\n   Range Mean:", round(mean(df$weight, na.rm = TRUE),1),
+                "\n  52 Week Low:", min(df_52$weight), "on", df_52$date[which.min(df_52$weight)],
+                "\n 52 Week High:", max(df_52$weight), "on", df_52$date[which.max(df_52$weight)],
+                "\n 52 Week Mean:", round(mean(df_52$weight, na.rm = TRUE),1),
+                "\n All Time Low:", min(full_df$weight), "on", full_df$date[which.min(full_df$weight)],
+                "\nAll Time High:", max(full_df$weight), "on", full_df$date[which.max(full_df$weight)],
+                "\nAll Time Mean:", round(mean(full_df$weight, na.rm = TRUE),1)
             )
+        )
         
-        
-        
-        cat("\n\nLast 5 weights:\n")
-        df <- df %>% dplyr::arrange(desc(date))
+        cat("\n", "__________________________________________",
+            "\nLast 5 weights:\n"
+        )
         head(df,5)
     })
     
