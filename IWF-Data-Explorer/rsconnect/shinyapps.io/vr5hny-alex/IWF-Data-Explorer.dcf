@@ -1,0 +1,13 @@
+name: IWF-Data-Explorer
+title: IWF-Data-Explorer
+username:
+account: cluffa
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6449968
+bundleId: 5987668
+url: https://cluffa.shinyapps.io/IWF-Data-Explorer/
+when: 1654657482.90768
+lastSyncTime: 1654657482.90773
+asMultiple: FALSE
+asStatic: FALSE
