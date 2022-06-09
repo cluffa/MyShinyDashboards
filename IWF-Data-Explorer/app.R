@@ -1,8 +1,7 @@
 # IWF DATA EXPLORER
 library(tidyverse)
-#library(googlesheets4)
 library(reactable)
-#library(plotly)
+library(shiny)
 
 load(url(
   "https://github.com/cluffa/IWF_data/raw/main/all_data.Rdata"
