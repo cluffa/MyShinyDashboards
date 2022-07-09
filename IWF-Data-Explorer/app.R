@@ -71,8 +71,8 @@ ui <- fluidPage(
           h3("-- Notes --"),
           h4("For the results tab:"),
           h5("- Negative weights mean the lifts are missed"),
-          h4("For the graph:"),
-          h5("- No filtering turns the graph into a 2d density plot."),
+          h4("For the plot:"),
+          h5("- No filtering turns the figure into a 2d density plot."),
           h5("- Select more than one athlete and no countries to compare athletes"),
           h5("- Select more than one countries and no athletes to compare countries")
         ),
@@ -95,11 +95,11 @@ ui <- fluidPage(
               )
             ),
             tabPanel(
-              "Graph",
+              "Plot",
               fluidRow(
                 selectizeInput(
                   inputId = "xAxis",
-                  label = "Graph X axis",
+                  label = "Plot X axis",
                   choices = c("Date", "Age", "Bodyweight"),
                   selected = "Date"
                 ),
@@ -109,7 +109,7 @@ ui <- fluidPage(
                   choices = c("All", cats),
                   selected = "All"
                 ),
-                plotOutput("graph")
+                plotOutput("plot")
                 
               )
             ),
@@ -118,7 +118,7 @@ ui <- fluidPage(
               fluidRow(
                 selectizeInput(
                   inputId = "histx",
-                  label = "Graph X axis",
+                  label = "Plot X axis",
                   choices = c("total_rank", "snatch_rank", "cleanjerk_rank", "age", "bw", "dq", "date", "snatch_best", "cleanjerk_best", "total"),
                   selected = "Date"
                 ),
@@ -277,7 +277,7 @@ server <- function(input, output, session) {
   
   xaxis <- reactive({input$xAxis})
   
-  output$graph <- renderPlot({
+  output$plot <- renderPlot({
     df <- datasetInput()$results %>%
       remove_missing() %>% 
       distinct()
