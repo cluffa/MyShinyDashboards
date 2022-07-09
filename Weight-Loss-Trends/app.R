@@ -8,7 +8,7 @@ df <- googlesheets4::read_sheet("151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0")
 ui <- fluidPage(mainPanel(
     titlePanel("Weight Loss Trend"),
     fluidRow(
-        column(4,dateRangeInput('dateRange',
+        column(6,dateRangeInput('dateRange',
             label = 'Date Range:',
             start = as.POSIXct("2022-03-28"), end = Sys.Date()
         )),
