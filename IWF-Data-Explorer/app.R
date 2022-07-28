@@ -26,7 +26,7 @@ cats <- results %>%
 age_range <- c(min(results$age), max(results$age))
 
 event_names <- events %>% 
-  transmute(name = paste0(event, " (", date, ")")) %>% 
+  transmute(name = paste0(event, " (", date, ")"), event_id = event_id) %>% 
   distinct() %>% 
   arrange(name)
 
@@ -46,6 +46,11 @@ countries_event <- events %>%
   arrange(iso_code)
 
 date_range <- c(min(events$date), max(events$date))
+
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[n]
+}
 
 ui <- fluidPage(
   titlePanel("IWF Event Results"),
@@ -120,7 +125,12 @@ ui <- fluidPage(
                   inputId = "histx",
                   label = "Plot X axis",
                   choices = c("total_rank", "snatch_rank", "cleanjerk_rank", "age", "bw", "dq", "date", "snatch_best", "cleanjerk_best", "total"),
-                  selected = "Date"
+                  selected = "total"
+                ),
+                checkboxInput(
+                  inputId = "histbygender",
+                  label = "Separate By Gender",
+                  value = TRUE
                 ),
                 plotOutput("hist")
                 
@@ -155,13 +165,6 @@ ui <- fluidPage(
             choices = age_groups,
             multiple = TRUE
           ),
-          selectizeInput(
-            "events",
-            label = "Filter By Event Name",
-            choices = event_names,
-            multiple = TRUE,
-            options = list(placeholder = "Search Event Names")
-          ),
           sliderInput(
             "date_range",
             label = "Filter By Date",
@@ -178,10 +181,29 @@ ui <- fluidPage(
             options = list(placeholder = "None")
           ),
         ),
-        mainPanel(
-          downloadButton("downloadevents", "Download as .CSV"),
-          reactableOutput("tableResultsEvent")
-        )
+        mainPanel(tabsetPanel(
+          type = "pills",
+          tabPanel(
+            "Events",
+            fluidRow(
+              #downloadButton("downloadevents", "Download as .CSV"),
+              reactableOutput("tableEventSearch")
+            ),
+          ),
+          tabPanel(
+            "Results",
+            fluidRow(
+              selectizeInput(
+                "singleEvent",
+                label = "Select Event (selection filtered by left panel)",
+                choices = NULL,
+                multiple = FALSE
+              ),
+              downloadButton("downloadeventresults", "Download as .CSV"),
+              reactableOutput("tableEventResults")
+            )
+          )
+        ))
       )
     )
   )
@@ -189,11 +211,22 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
-  updateSelectizeInput(session, "athletes", choices = names, server = TRUE,
-                       selected = c("ROGERS Martha (1995-08-23)", "NYE Katherine (1999-01-05)"),
-                       options = list(placeholder = "Search Athlete (last first)"))
-  updateSelectizeInput(session, "nations", choices = countries, server = TRUE,
-                       options = list(placeholder = "Search Country Code e.g. 'USA'"))
+  updateSelectizeInput(
+    session, 
+    "athletes", 
+    choices = names, server = TRUE,
+    #selected = c("ROGERS Martha (1995-08-23)", "NYE Katherine (1999-01-05)"),
+    options = list(placeholder = "Search Athlete (last first)")
+  )
+  
+  updateSelectizeInput(
+    session, 
+    "nations", 
+    choices = countries, 
+    server = TRUE,
+    selected = c("USA", "CHN"),
+    options = list(placeholder = "Search Country Code e.g. 'USA'")
+  )
   
   
   datasetInput <- reactive({
@@ -220,11 +253,30 @@ server <- function(input, output, session) {
         if (length(input$country) > 0) iso_code %in% input$country else TRUE,
         if (length(input$city) > 0) city %in% input$city else TRUE,
         if (length(input$age_group) > 0) age_group %in% input$age_group else TRUE,
-        if (length(input$events) > 0) name %in% str_split(input$events, " \\(", simplify = TRUE)[,1] else TRUE,
         date >= input$date_range[1] & date <= input$date_range[2],
         if ("Olympics" %in% input$special) is_olympics == 1 else TRUE,
         if ("Universities" %in% input$special) is_university == 1 else TRUE,
       )
+  })
+
+  observeEvent(datasetInputEvent(), {
+    df = datasetInputEvent() %>% 
+      arrange(desc(date))
+    
+    updateSelectizeInput(
+      session,
+      "singleEvent",
+      choices = df$event,
+      server = TRUE,
+    )
+  })
+  
+  datasetInputEventResults <- reactive({
+    results %>% 
+      filter(
+        input$singleEvent == event
+      ) %>% 
+      select(-event, -event_id)
   })
   
   output$summary <- renderPrint({
@@ -260,7 +312,7 @@ server <- function(input, output, session) {
       )
   })
 
-  output$tableResultsEvent <- renderReactable({
+  output$tableEventSearch <- renderReactable({
     reactable(
       datasetInputEvent(),
       striped = TRUE,
@@ -273,6 +325,21 @@ server <- function(input, output, session) {
       outlined = TRUE,
       resizable = TRUE,
       )
+  })
+  
+  output$tableEventResults <- renderReactable({
+    reactable(
+      datasetInputEventResults(),
+      striped = TRUE,
+      compact = TRUE,
+      wrap = FALSE,
+      showSortable = TRUE,
+      defaultPageSize = 25,
+      showPageSizeOptions = TRUE,
+      pageSizeOptions = c(25,50,100),
+      outlined = TRUE,
+      resizable = TRUE,
+    )
   })
   
   xaxis <- reactive({input$xAxis})
@@ -294,21 +361,21 @@ server <- function(input, output, session) {
    
     
     if (length(input$nations) > 0 & length(input$athletes) == 0) {
-      graph <- base +
+      plot <- base +
         geom_point(aes(y = total, color = nation, shape = NULL), alpha = 0.5) +
         geom_smooth(aes(y = total, color = nation)) +
         labs(color = "Country")
     } else if (length(input$nations) == 0 & length(input$athletes) == 0) {
       if (input$category == "All") {
-        graph <- base +
+        plot <- base +
           geom_bin2d(aes(y = total)) +
           scale_fill_continuous(type = "viridis")
       } else {
-        graph <- base +
+        plot <- base +
           geom_point(aes(y = total))
       }
     } else {
-      graph = base +
+      plot = base +
         geom_point(
           aes(y = total,
               color = if (length(input$athletes) > 0 & length(input$athletes) <= 10) name else NULL,
@@ -320,15 +387,24 @@ server <- function(input, output, session) {
         labs(color = "Athlete", shape = "Country")
     }
     
-    graph
+    plot
   })
   
   output$hist <- renderPlot({
     df = datasetInput()$results
-    ggplot(df, aes_string(input$histx)) +
-      theme_bw() +
-      geom_histogram(aes(y = ..density..)) +
-      geom_density()
+    plot = ggplot(df,aes_string(input$histx), color = "red") + theme_bw()
+    
+    if (input$histbygender) {
+      plot = plot + geom_histogram( # separate by gender
+        aes(fill = gender),
+        position="dodge"
+      )
+    } else {
+      plot = plot + geom_histogram( # not separate
+        fill = gg_color_hue(1)
+      )
+    }
+    plot
   })
   
   output$downloadresults <- downloadHandler(
@@ -349,6 +425,13 @@ server <- function(input, output, session) {
     filename = "results.csv",
     function(file) {
       write_csv(datasetInput()$athletes, file)
+    }
+  )
+  
+  output$downloadeventresults <- downloadHandler(
+    filename = paste0(str_replace_all(input$singleEvent, " ", "-"), ".csv"),
+    function(file) {
+      write_csv(datasetInputEventResults(), file)
     }
   )
   
