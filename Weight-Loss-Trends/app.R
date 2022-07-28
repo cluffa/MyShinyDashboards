@@ -8,16 +8,25 @@ df <- googlesheets4::read_sheet("151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0")
 ui <- fluidPage(mainPanel(
     titlePanel("Weight Loss Trend"),
     fluidRow(
-        column(6,dateRangeInput('dateRange',
-            label = 'Date Range:',
+        column(6,
+          dateRangeInput("dateRange",
+            label = "Date Range:",
             start = as.POSIXct("2022-03-28"), end = Sys.Date()
-        )),
+          )
+        ),
         column(4,
-            numericInput('goalwt',
-                label = "Goal Weight:",
-                value = 225,
-                step = 5
-            ),
+            # numericInput("goalwt",
+            #     label = "Goal Weight:",
+            #     value = 225,
+            #     step = 5
+            # ),
+            sliderInput(
+              "goalwt",
+              label = "Goal Weight",
+              min = 185,
+              max = 275,
+              value = 225
+            )
         ),
     ),
     fluidRow(
@@ -102,7 +111,7 @@ server <- function(input, output) {
         range <- as.Date(range)
         range <- range[2] - range[1]
         suppressWarnings(
-            cat("STATS\n", "___________________________________________",
+            cat("STATS\n", "______________________________________",
                 "\n   Date Range:", round(as.numeric(range)/7,1), "weeks",
                 "\n    Range Low:", min(df$weight), "on", df$date[which.min(df$weight)],
                 "\n   Range High:", max(df$weight), "on", df$date[which.max(df$weight)],
@@ -116,7 +125,7 @@ server <- function(input, output) {
             )
         )
         
-        cat("\n", "__________________________________________",
+        cat("\n", "_____________________________________",
             "\nLast 5 weights:\n"
         )
         head(df,5)
