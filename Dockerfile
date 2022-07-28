@@ -1,5 +1,5 @@
-FROM rocker/shiny
-RUN install2.r rsconnect
+FROM rocker/shiny-verse
+RUN install2.r rsconnect reactable tidyverse
 WORKDIR /home/shinyusr
-COPY ./ ./
+COPY ./* ./
 CMD Rscript deploy.R
