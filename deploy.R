@@ -1,6 +1,4 @@
 library(rsconnect)
-library(tidyverse)
-library(reactable)
 
 getenv <- function(name){
   var <- Sys.getenv(name, unset=NA)
@@ -18,10 +16,12 @@ setAccountInfo(
 
 deployApp(
   appDir = "IWF-Data-Explorer/",
-  forceUpdate = TRUE
+  forceUpdate = TRUE,
+  launch.browser = FALSE
 )
 
 deployApp(
   appDir = "Weight-Loss-Trends/",
-  forceUpdate = TRUE
+  forceUpdate = TRUE,
+  launch.browser = FALSE
 )

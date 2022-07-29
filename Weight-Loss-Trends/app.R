@@ -2,8 +2,11 @@
 library(shiny)
 library(ggplot2)
 
-googlesheets4::gs4_auth("alexcluff16@gmail.com", cache = ".secrets")
-df <- googlesheets4::read_sheet("151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0")
+df <- readr::read_csv(
+  "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
+  col_names = c("date", "weight", "unit", "fat", "lean"),
+  col_types = "Tncnn"
+  )
 
 ui <- fluidPage(mainPanel(
     titlePanel("Weight Loss Trend"),
