@@ -14,14 +14,17 @@ setAccountInfo(
   secret = getenv("SECRET")
 )
 
-deployApp(
-  appDir = "IWF-Data-Explorer/",
-  forceUpdate = TRUE,
-  launch.browser = FALSE
+dirs <- c(
+  "IWF-Data-Explorer/",
+  "Weight-Loss-Trends/",
+  "R6/"
 )
 
-deployApp(
-  appDir = "Weight-Loss-Trends/",
-  forceUpdate = TRUE,
-  launch.browser = FALSE
-)
+
+for (dir in dirs) {
+  deployApp(
+    appDir = dir,
+    forceUpdate = TRUE,
+    launch.browser = FALSE
+  )
+}
