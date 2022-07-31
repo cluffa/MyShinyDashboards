@@ -17,7 +17,7 @@ setAccountInfo(
 dirs <- c(
   "IWF-Data-Explorer/",
   "Weight-Loss-Trends/",
-  "R6/"
+  "R6-Stats/"
 )
 
 
