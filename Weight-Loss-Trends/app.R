@@ -1,52 +1,65 @@
 # Weight Loss Trend
 library(shiny)
 library(ggplot2)
+library(shinydashboard)
+library(reactable)
 
-df <- readr::read_csv(
-  "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
-  col_names = c("date", "weight", "unit", "fat", "lean"),
-  col_types = "Tncnn"
-  )
-
-ui <- fluidPage(mainPanel(
-    titlePanel("Weight Loss Trend"),
+ui <- dashboardPage(
+  dashboardHeader(disable = TRUE),
+  dashboardSidebar(
+    disable = TRUE
+  ),
+  dashboardBody(
+    # Boxes need to be put in a row (or column)
     fluidRow(
-        column(6,
-          dateRangeInput("dateRange",
-            label = "Date Range:",
-            start = as.POSIXct("2022-03-28"), end = Sys.Date()
-          )
+      box(
+        dateRangeInput(
+          "dateRange",
+          label = "Date Range:",
+          start = as.POSIXct("2022-03-28"), end = Sys.Date()
         ),
-        column(4,
-            # numericInput("goalwt",
-            #     label = "Goal Weight:",
-            #     value = 225,
-            #     step = 5
-            # ),
-            sliderInput(
-              "goalwt",
-              label = "Goal Weight",
-              min = 185,
-              max = 275,
-              value = 225
-            )
-        ),
-    ),
-    fluidRow(
-        verbatimTextOutput("summary"),
         plotOutput("plot1"),
-        verbatimTextOutput("stats"),
-        #verbatimTextOutput("model")
+      ),
+      tabBox(
+        tabPanel(
+          "Stats",
+          verbatimTextOutput("stats"),
+        ),
+        tabPanel(
+          "Goal Projection",
+          sliderInput(
+            "goalwt",
+            label = "Goal Weight",
+            min = 185,
+            max = 275,
+            value = 225
+          ),
+          verbatimTextOutput("summary"),
+        ),
+        tabPanel(
+          "Table",
+          reactableOutput("table")
+        )
+      )
     )
-))
+  )
+)
 
 server <- function(input, output) {
+  
+    df <- readr::read_csv(
+        "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
+        col_names = c("date", "weight", "unit", "fat", "lean"),
+        col_types = "Tncnn"
+    )
+    
     get_date_range <- reactive({
         c(
             as.POSIXct(input$dateRange[1]),
             as.POSIXct(input$dateRange[2])
         )
     })
+    
     get_data <- reactive({
         df$date <- lubridate::floor_date(df$date, unit = "1 days")
         df <- aggregate(df, list(df$date), function(x) min(x, na.rm = TRUE))
@@ -114,8 +127,7 @@ server <- function(input, output) {
         range <- as.Date(range)
         range <- range[2] - range[1]
         suppressWarnings(
-            cat("STATS\n", "______________________________________",
-                "\n   Date Range:", round(as.numeric(range)/7,1), "weeks",
+            cat("   Date Range:", round(as.numeric(range)/7,1), "weeks",
                 "\n    Range Low:", min(df$weight), "on", df$date[which.min(df$weight)],
                 "\n   Range High:", max(df$weight), "on", df$date[which.max(df$weight)],
                 "\n   Range Mean:", round(mean(df$weight, na.rm = TRUE),1),
@@ -127,11 +139,6 @@ server <- function(input, output) {
                 "\nAll Time Mean:", round(mean(full_df$weight, na.rm = TRUE),1)
             )
         )
-        
-        cat("\n", "_____________________________________",
-            "\nLast 5 weights:\n"
-        )
-        head(df,5)
     })
     
     output$model <- renderPrint({
@@ -141,6 +148,20 @@ server <- function(input, output) {
         cat("Model (date in seconds):", sep = "\n")
         
         summary(model)
+    })
+    
+    output$table <- renderReactable({
+      reactable(
+        get_df(),
+        striped = TRUE,
+        compact = TRUE,
+        wrap = FALSE,
+        showSortable = FALSE,
+        defaultPageSize = 25,
+        showPageSizeOptions = FALSE,
+        pageSizeOptions = c(25,50,100),
+        outlined = TRUE,
+        resizable = FALSE,)
     })
 }
 
