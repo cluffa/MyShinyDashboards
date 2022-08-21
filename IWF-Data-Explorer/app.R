@@ -430,7 +430,7 @@ server <- function(input, output, session) {
   )
   
   output$downloadeventresults <- downloadHandler(
-    filename = paste0(str_replace_all(input$singleEvent, " ", "-"), ".csv"),
+    filename = "event-results.csv"),
     function(file) {
       write_csv(datasetInputEventResults(), file)
     }
