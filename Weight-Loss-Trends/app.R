@@ -13,12 +13,26 @@ ui <- dashboardPage(
     # Boxes need to be put in a row (or column)
     fluidRow(
       box(
-        dateRangeInput(
+        radioButtons(
           "dateRange",
-          label = "Date Range:",
-          start = Sys.Date() - 90,
-          end = Sys.Date()
+          label = "Date Range",
+          choices = c(
+            `30 Days` = Sys.Date() - 30,
+            `90 Days` = Sys.Date() - 90,
+            `1 Year` = Sys.Date() - 365,
+            `2 Years` = Sys.Date() - 365*2,
+            `3 Years` = Sys.Date() - 365*3,
+            `All Time` = Sys.Date() - 9999
+            ),
+          selected = c(`90 Days` = Sys.Date() - 90),
+          inline = TRUE
         ),
+        # dateRangeInput(
+        #   "dateRange",
+        #   label = NULL,
+        #   start = Sys.Date() - 90,
+        #   end = Sys.Date()
+        # ),
         plotOutput("plot1"),
       ),
       tabBox(
@@ -40,7 +54,11 @@ ui <- dashboardPage(
         tabPanel(
           "Table",
           reactableOutput("table")
-        )
+        ),
+        # tabPanel(
+        #   "Debug",
+        #   verbatimTextOutput("debug")
+        # )
       )
     )
   )
@@ -55,10 +73,16 @@ server <- function(input, output) {
     )
     
     get_date_range <- reactive({
+      
         c(
-            as.POSIXct(input$dateRange[1]),
-            as.POSIXct(input$dateRange[2])
+          as.POSIXct(input$dateRange),
+          as.POSIXct(Sys.Date())
         )
+      
+        # c(
+        #     as.POSIXct(input$dateRange[1]),
+        #     as.POSIXct(input$dateRange[2])
+        # )
     })
     
     get_data <- reactive({
@@ -113,6 +137,10 @@ server <- function(input, output) {
         
     })
     
+    # output$debug <- renderPrint({
+    #     cat(test, sep = "\n")
+    # })
+    
     output$stats <- renderPrint({
         df <- get_df()
         full_df <- get_data()
@@ -122,19 +150,15 @@ server <- function(input, output) {
         
         df$date <- as.character(df$date)
         full_df$date <- as.character(full_df$date)
-        df_52$date <- as.character(df_52$date)
         
         range <- get_date_range()
         range <- as.Date(range)
         range <- range[2] - range[1]
         suppressWarnings(
-            cat("   Date Range:", round(as.numeric(range)/7,1), "weeks",
-                "\n    Range Low:", min(df$weight), "on", df$date[which.min(df$weight)],
+            cat(
+                "    Range Low:", min(df$weight), "on", df$date[which.min(df$weight)],
                 "\n   Range High:", max(df$weight), "on", df$date[which.max(df$weight)],
                 "\n   Range Mean:", round(mean(df$weight, na.rm = TRUE),1),
-                "\n  52 Week Low:", min(df_52$weight), "on", df_52$date[which.min(df_52$weight)],
-                "\n 52 Week High:", max(df_52$weight), "on", df_52$date[which.max(df_52$weight)],
-                "\n 52 Week Mean:", round(mean(df_52$weight, na.rm = TRUE),1),
                 "\n All Time Low:", min(full_df$weight), "on", full_df$date[which.min(full_df$weight)],
                 "\nAll Time High:", max(full_df$weight), "on", full_df$date[which.max(full_df$weight)],
                 "\nAll Time Mean:", round(mean(full_df$weight, na.rm = TRUE),1)
