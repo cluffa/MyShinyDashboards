@@ -16,7 +16,8 @@ ui <- dashboardPage(
         dateRangeInput(
           "dateRange",
           label = "Date Range:",
-          start = as.POSIXct("2022-07-01"), end = Sys.Date()
+          start = Sys.Date() - 90,
+          end = Sys.Date()
         ),
         plotOutput("plot1"),
       ),
