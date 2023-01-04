@@ -69,8 +69,10 @@ server <- function(input, output) {
     df <- readr::read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
         col_names = c("date", "weight", "unit", "fat", "lean"),
-        col_types = "Tncnn"
+        col_types = "cncnn",
+        skip = 1
     )
+    df$date = as.POSIXct(df$date, tz = "EST")
     
     get_date_range <- reactive({
       
