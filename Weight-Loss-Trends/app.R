@@ -144,7 +144,7 @@ server <- function(input, output) {
         ggplot() +
             geom_point(aes(y = weight, x = date, color = "Observed Weight"), data = df, alpha = 0.7) +
             geom_line(aes(date, weight, color = "Spline Fit"), data = spl, size = 1) +
-            geom_abline(color = "red", intercept = coefs[1], slope = coefs[2], linetype = 2, size = 1) +
+            geom_abline(aes(color = "Linear Regression"), color = "red", intercept = coefs[1], slope = coefs[2], linetype = 2, size = 1) +
             scale_color_manual(
                 name = NULL,
                 breaks = c(
