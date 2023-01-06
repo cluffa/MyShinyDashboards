@@ -31,3 +31,4 @@ shiny-examples/
 .secrets
 Weight-Loss-Trends/core
 rsconnect/
+.DS_Store

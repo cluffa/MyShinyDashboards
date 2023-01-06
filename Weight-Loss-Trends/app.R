@@ -3,65 +3,73 @@ library(shiny)
 library(ggplot2)
 library(shinydashboard)
 library(reactable)
+library(lubridate)
 
 ui <- dashboardPage(
-  dashboardHeader(disable = TRUE),
-  dashboardSidebar(
-    disable = TRUE
-  ),
-  dashboardBody(
-    # Boxes need to be put in a row (or column)
-    fluidRow(
-      box(
-        radioButtons(
-          "dateRange",
-          label = "Date Range",
-          choices = c(
-            `30 Days` = Sys.Date() - 30,
-            `90 Days` = Sys.Date() - 90,
-            `1 Year` = Sys.Date() - 365,
-            `2 Years` = Sys.Date() - 365*2,
-            `3 Years` = Sys.Date() - 365*3,
-            `All Time` = Sys.Date() - 9999
+    dashboardHeader(disable = TRUE),
+    dashboardSidebar(
+        disable = TRUE
+    ),
+    dashboardBody(
+        # Boxes need to be put in a row (or column)
+        fluidRow(
+            box(
+                radioButtons(
+                    "dateRange",
+                    label = "Date Range",
+                    choices = c(
+                        `30 Days` = Sys.Date() - 30,
+                        `90 Days` = Sys.Date() - 90,
+                        `1 Year` = Sys.Date() - 365,
+                        `2 Years` = Sys.Date() - 365*2,
+                        `3 Years` = Sys.Date() - 365*3,
+                        `All Time` = Sys.Date() - 99999
+                        ),
+                    selected = c(`90 Days` = Sys.Date() - 90),
+                    inline = TRUE
+                ),
+                # dateRangeInput(
+                #   "dateRange",
+                #   label = NULL,
+                #   start = Sys.Date() - 90,
+                #   end = Sys.Date()
+                # ),
+                plotOutput("plot1"),
             ),
-          selected = c(`90 Days` = Sys.Date() - 90),
-          inline = TRUE
-        ),
-        # dateRangeInput(
-        #   "dateRange",
-        #   label = NULL,
-        #   start = Sys.Date() - 90,
-        #   end = Sys.Date()
-        # ),
-        plotOutput("plot1"),
-      ),
-      tabBox(
-        tabPanel(
-          "Stats",
-          verbatimTextOutput("stats"),
-        ),
-        tabPanel(
-          "Goal Projection",
-          sliderInput(
-            "goalwt",
-            label = "Goal Weight",
-            min = 185,
-            max = 275,
-            value = 225
-          ),
-          verbatimTextOutput("summary"),
-        ),
-        tabPanel(
-          "Table",
-          reactableOutput("table")
-        ),
-        # tabPanel(
-        #   "Debug",
-        #   verbatimTextOutput("debug")
-        # )
-      )
+            tabBox(
+                tabPanel(
+                "Stats",
+                verbatimTextOutput("stats"),
+                ),
+                tabPanel(
+                    "Goal Projection",
+                    sliderInput(
+                        "goalwt",
+                        label = "Goal Weight",
+                        min = 185,
+                        max = 275,
+                        value = 225
+                    ),
+                    verbatimTextOutput("summary"),
+                ),
+                tabPanel(
+                    "Table",
+                    reactableOutput("table")
+                ),
+                tabPanel(
+                    "Info",
+                    p("This dashboard was created so that I could easily track my weight over time.
+                        I aim for a specific average pounds lost per week over the last 30 or 90 days.
+                        With this dashboard I can easily view those trends and adjust accordingly."),
+                    p("Because the observations are not spread evenly, I created a spline to
+                        approximate the weight with values spread exactly 24 hours apart.
+                        The linear regression line is fit using those points. The slope is then used
+                        to predict when I will meet my goal weight.
+                        ")
+                )
+            )
+        )
     )
-  )
 )
 
 server <- function(input, output) {
@@ -71,28 +79,30 @@ server <- function(input, output) {
         col_names = c("date", "weight", "unit", "fat", "lean"),
         col_types = "cncnn",
         skip = 1
+    ) |> dplyr::arrange(
+        date
     )
-    df$date = as.POSIXct(df$date, tz = "EST")
+    
+    df$date <- as.POSIXct(df$date) |> force_tz(tzone = "EST")
+    spl <- smooth.spline(df$date, df$weight, spar = 0.4)
+    
+    rng_start <- floor_date(df$date[1], "days")
+    rng_stop <- ceiling_date(tail(df$date, 1), "days")
+
+    rng <- seq(rng_start, rng_stop, by = "24 hours")
+    
+    pred <- predict(spl, as.numeric(rng))
+    
     
     get_date_range <- reactive({
-      
         c(
           as.POSIXct(input$dateRange),
           as.POSIXct(Sys.Date())
         )
-      
-        # c(
-        #     as.POSIXct(input$dateRange[1]),
-        #     as.POSIXct(input$dateRange[2])
-        # )
     })
     
     get_data <- reactive({
-        df$date <- lubridate::floor_date(df$date, unit = "1 days")
-        df <- aggregate(df, list(df$date), function(x) min(x, na.rm = TRUE))
-        df$Group.1 <- NULL
-        df$unit <- NULL
-        df <- dplyr::arrange(df,desc(date))
+        df <- dplyr::arrange(df, desc(date))
         df
     })
     
@@ -104,7 +114,20 @@ server <- function(input, output) {
     })
     
     get_model <- reactive({
-        lm(weight ~ date, get_df())
+        pred <- get_spline_pred_in_range()
+        df <- get_df()
+        lm(weight ~ date, pred)
+    })
+    
+    get_spline_pred_in_range <- reactive({
+        range <- get_date_range()
+    
+        in_rng <- pred$x >= range[1] & pred$x <= range[2] + 86400
+        
+        data.frame(
+            date = as.POSIXct(pred$x[in_rng], origin = "1970-1-1"),
+            weight = pred$y[in_rng]
+        )
     })
     
     get_gw <- reactive({
@@ -115,12 +138,31 @@ server <- function(input, output) {
         model <- get_model()
         coefs <- model$coefficients
         range <- get_date_range()
+        spl <- get_spline_pred_in_range()
         df <- get_df()
         
-        ggplot2::ggplot() +
-            ggplot2::geom_point(aes(y = weight, x = date), data = df) +
-            ggplot2::geom_abline(intercept = coefs[1], slope = coefs[2], color = "red", linetype = 2) +
-            ggplot2::theme_bw()
+        ggplot() +
+            geom_point(aes(y = weight, x = date, color = "Observed Weight"), data = df, alpha = 0.7) +
+            geom_line(aes(date, weight, color = "Spline Fit"), data = spl, size = 1) +
+            geom_abline(color = "red", intercept = coefs[1], slope = coefs[2], linetype = 2, size = 1) +
+            scale_color_manual(
+                name = NULL,
+                breaks = c(
+                    "Observed Weight",
+                    "Spline Fit",
+                    "Linear Regression"
+                ),
+                values = c(
+                    "Observed Weight" = "black",
+                    "Spline Fit" = "green",
+                    "Linear Regression" = "red"
+                )
+            ) +
+            theme_bw() +
+            theme(
+                legend.position = c(0.2, 0.1),
+                legend.background = element_rect(fill = "transparent")
+            )
     })
     
     output$summary <- renderPrint({
@@ -139,13 +181,15 @@ server <- function(input, output) {
         
     })
     
-    # output$debug <- renderPrint({
-    #     cat(test, sep = "\n")
-    # })
-    
     output$stats <- renderPrint({
-        df <- get_df()
-        full_df <- get_data()
+        df <- get_df() |> 
+            dplyr::mutate(
+                date = format(date, "%Y-%m-%d")
+            )
+        full_df <- get_data() |> 
+            dplyr::mutate(
+                date = format(date, "%Y-%m-%d")
+            )
         
         range_52 <- c(Sys.Date() - (52*7), Sys.Date() + 1)
         df_52 <- full_df[full_df$date >= range_52[1] & full_df$date <= range_52[2],]
@@ -178,17 +222,30 @@ server <- function(input, output) {
     })
     
     output$table <- renderReactable({
-      reactable(
-        get_df(),
-        striped = TRUE,
-        compact = TRUE,
-        wrap = FALSE,
-        showSortable = FALSE,
-        defaultPageSize = 25,
-        showPageSizeOptions = FALSE,
-        pageSizeOptions = c(25,50,100),
-        outlined = TRUE,
-        resizable = FALSE,)
+        df1 <- dplyr::transmute(
+            get_data(),
+            date = date(date),
+            weight = weight
+        ) |> dplyr::group_by(
+            date
+        ) |> dplyr::summarise(
+            weight = round(mean(weight), 1)
+        ) |> dplyr::arrange(
+            desc(date)
+        )
+            
+                                
+        reactable(
+            df1,
+            striped = TRUE,
+            compact = TRUE,
+            wrap = FALSE,
+            showSortable = TRUE,
+            defaultPageSize = 25,
+            showPageSizeOptions = FALSE,
+            pageSizeOptions = c(25,50,100),
+            outlined = TRUE,
+            resizable = FALSE,)
     })
 }
 
