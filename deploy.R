@@ -36,6 +36,6 @@ deploy <- function(dir) {
   )
 }
 
-foreach(dir = dirs) %do% deploy(dir)
+foreach(dir = dirs) %dopar% deploy(dir)
 
 stopCluster(myCluster)
