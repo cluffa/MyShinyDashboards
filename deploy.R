@@ -1,4 +1,5 @@
 library(rsconnect)
+library(foreach)
 
 getenv <- function(name){
   var <- Sys.getenv(name, unset=NA)
@@ -21,7 +22,7 @@ dirs <- c(
 )
 
 
-for (dir in dirs) {
+foreach(dir = dirs) %do% {
   deployApp(
     appDir = dir,
     forceUpdate = TRUE,
