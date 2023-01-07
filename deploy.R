@@ -1,6 +1,8 @@
 library(rsconnect)
 library(foreach)
 library(doParallel)
+library(iterators)
+library(parallel)
 
 myCluster <- makeCluster(3, type = "PSOCK")
 registerDoParallel(myCluster)
