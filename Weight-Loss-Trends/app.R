@@ -145,7 +145,6 @@ server <- function(input, output) {
             geom_point(
                 aes(y = weight, x = date, color = "Observed Weight"),
                 data = df,
-                color = "darkgray"
                 ) +
             geom_line(
                 aes(date, weight, color = "Spline Fit"),
@@ -168,7 +167,7 @@ server <- function(input, output) {
                     "Linear Model"
                 ),
                 values = c(
-                    "Observed Weight" = "black",
+                    "Observed Weight" = "darkgray",
                     "Spline Fit" = "blue",
                     "Linear Model" = "red"
                 )
