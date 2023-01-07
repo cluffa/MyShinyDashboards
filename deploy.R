@@ -6,8 +6,6 @@ library(parallel)
 myCluster <- makeCluster(3, type = "PSOCK")
 registerDoParallel(myCluster)
 
-library(rsconnect)
-
 getenv <- function(name){
   var <- Sys.getenv(name, unset=NA)
   if(is.na(var)){
@@ -16,12 +14,6 @@ getenv <- function(name){
   gsub("\"", '',var)
 }
 
-setAccountInfo(
-  name = "cluffa",
-  token = getenv("TOKEN"),
-  secret = getenv("SECRET")
-)
-
 dirs <- c(
   "IWF-Data-Explorer/",
   "Weight-Loss-Trends/",
@@ -29,6 +21,14 @@ dirs <- c(
 )
 
 deploy <- function(dir) {
+  library(rsconnect)
+  
+  setAccountInfo(
+    name = "cluffa",
+    token = getenv("TOKEN"),
+    secret = getenv("SECRET")
+  )
+  
   deployApp(
     appDir = dir,
     forceUpdate = TRUE,
