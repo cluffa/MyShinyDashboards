@@ -1,5 +1,9 @@
 library(rsconnect)
 library(foreach)
+library(doParallel)
+
+myCluster <- makeCluster(3, type = "PSOCK")
+registerDoParallel(myCluster)
 
 getenv <- function(name){
   var <- Sys.getenv(name, unset=NA)
@@ -22,10 +26,12 @@ dirs <- c(
 )
 
 
-foreach(dir = dirs) %do% {
+foreach(dir = dirs) %dopar% {
   deployApp(
     appDir = dir,
     forceUpdate = TRUE,
     launch.browser = FALSE
   )
 }
+
+stopCluster(myCluster)
