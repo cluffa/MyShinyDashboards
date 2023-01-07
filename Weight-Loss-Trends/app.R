@@ -142,25 +142,41 @@ server <- function(input, output) {
         df <- get_df()
         
         ggplot() +
-            geom_point(aes(y = weight, x = date, color = "Observed Weight"), data = df, alpha = 0.7) +
-            geom_line(aes(date, weight, color = "Spline Fit"), data = spl, size = 1) +
-            geom_abline(aes(color = "Linear Regression"), color = "red", intercept = coefs[1], slope = coefs[2], linetype = 2, size = 1) +
+            geom_point(
+                aes(y = weight, x = date, color = "Observed Weight"),
+                data = df,
+                shape = 21,
+                fill = "gray"
+                ) +
+            geom_line(
+                aes(date, weight, color = "Spline Fit"),
+                data = spl,
+                linewidth = 1
+                ) +
+            geom_smooth(
+                aes(x = date, y = weight, color = "Linear Model"),
+                data = spl,
+                method = "lm",
+                linetype = 2,
+                linewidth = 1,
+                se = FALSE
+                ) +
             scale_color_manual(
                 name = NULL,
                 breaks = c(
                     "Observed Weight",
                     "Spline Fit",
-                    "Linear Regression"
+                    "Linear Model"
                 ),
                 values = c(
                     "Observed Weight" = "black",
                     "Spline Fit" = "green",
-                    "Linear Regression" = "red"
+                    "Linear Model" = "red"
                 )
             ) +
             theme_bw() +
             theme(
-                legend.position = c(0.2, 0.2),
+                legend.position = c(0.18, 0.1),
                 legend.background = element_rect(fill = "transparent")
             )
     })
