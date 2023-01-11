@@ -1,6 +1,6 @@
 # Weight Loss Trend
 library(shiny)
-library(ggplot2)
+library(tidyverse)
 library(shinydashboard)
 library(reactable)
 library(lubridate)
@@ -14,6 +14,7 @@ ui <- dashboardPage(
         # Boxes need to be put in a row (or column)
         fluidRow(
             box(
+                title = "Body Weight",
                 radioButtons(
                     "dateRange",
                     label = "Date Range",
@@ -28,13 +29,11 @@ ui <- dashboardPage(
                     selected = c(`90 Days` = Sys.Date() - 90),
                     inline = TRUE
                 ),
-                # dateRangeInput(
-                #   "dateRange",
-                #   label = NULL,
-                #   start = Sys.Date() - 90,
-                #   end = Sys.Date()
-                # ),
-                plotOutput("plot1"),
+                plotOutput(
+                    "plot1",
+                    height = "500px"
+                ),
+                width = 8,
             ),
             tabBox(
                 tabPanel(
@@ -66,7 +65,8 @@ ui <- dashboardPage(
                         The linear regression line is fit using those points. The slope is then used
                         to predict when I will meet my goal weight.
                         ")
-                )
+                ),
+                width = 4
             )
         )
     )
@@ -134,11 +134,51 @@ server <- function(input, output) {
         input$goalwt
     })
     
+    get_daily_avg <- reactive({
+        dplyr::transmute(
+                get_data(),
+                date = date(date),
+                weight = weight
+            ) |> dplyr::group_by(
+                date
+            ) |> dplyr::summarise(
+                weight = round(mean(weight), 1)
+            ) |> dplyr::arrange(
+                desc(date)
+            )
+    })
+    
+    get_expsmooth <- reactive({
+        range <- get_date_range()
+        
+        df <- get_daily_avg()
+        df <- df[df$date >= range[1] & df$date <= range[2] + 86400,] |> 
+            arrange(
+                date
+            )
+        
+        x = df$weight
+        alpha = 0.1
+        s = numeric(length(x) + 1)
+        for (i in seq_along(s)) {
+            if (i == 1) {
+                s[i] <- x[i]
+            } else {
+                s[i] <- alpha * x[i - 1] + (1 - alpha) * s[i - 1]
+            }
+        }
+        df$weight <- s[-1]
+        df$date <- as.POSIXct(df$date)
+        
+        return(df)
+    })
+    
     output$plot1 <- renderPlot({
         model <- get_model()
         coefs <- model$coefficients
         range <- get_date_range()
         spl <- get_spline_pred_in_range()
+        expsmooth = get_expsmooth()
         df <- get_df()
         
         ggplot() +
@@ -182,15 +222,20 @@ server <- function(input, output) {
     output$summary <- renderPrint({
         model <- get_model()
         coef <- unname(model$coefficients[2])*86400
-        df <- get_df()
+        spl <- get_spline_pred_in_range()
         gw <- get_gw()
+        
+        dif = tail(spl$weight, n = 1) - spl$weight[1] 
+        
+        cals = (dif * 3500) / nrow(spl)
         
         gwdate <- (gw - model$coefficients[1])/model$coefficients[2]
         
         cat(
             "Daily Trend:", coef, "lbs/day",
             "\nWeekly Trend:", coef*7, "lbs/week",
-            "\nGoal Projection:", gw, "on", as.character(as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1")))
+            "\nGoal Projection:", gw, "on", as.character(as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1"))),
+            "\nAvg Daily Diff From Net Calories:", round(cals, 0)
             )
         
     })
@@ -236,17 +281,7 @@ server <- function(input, output) {
     })
     
     output$table <- renderReactable({
-        df1 <- dplyr::transmute(
-            get_data(),
-            date = date(date),
-            weight = weight
-        ) |> dplyr::group_by(
-            date
-        ) |> dplyr::summarise(
-            weight = round(mean(weight), 1)
-        ) |> dplyr::arrange(
-            desc(date)
-        )
+        df1 <- get_daily_avg()
             
                                 
         reactable(
