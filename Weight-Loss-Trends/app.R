@@ -4,10 +4,12 @@ library(tidyverse)
 library(shinydashboard)
 library(reactable)
 library(lubridate)
+library(shinyjs)
 
 ui <- dashboardPage(
     dashboardHeader(disable = TRUE),
     dashboardSidebar(
+        useShinyjs(),
         disable = TRUE
     ),
     dashboardBody(
@@ -15,30 +17,80 @@ ui <- dashboardPage(
         fluidRow(
             box(
                 title = "Body Weight",
-                radioButtons(
-                    "dateRange",
-                    label = "Date Range",
-                    choices = c(
-                        `30 Days` = Sys.Date() - 30,
-                        `90 Days` = Sys.Date() - 90,
-                        `1 Year` = Sys.Date() - 365,
-                        `2 Years` = Sys.Date() - 365*2,
-                        `3 Years` = Sys.Date() - 365*3,
-                        `All Time` = Sys.Date() - 99999
-                        ),
-                    selected = c(`90 Days` = Sys.Date() - 90),
-                    inline = TRUE
-                ),
                 plotOutput(
                     "plot1",
-                    height = "500px"
+                    height = "500px",
+                    #click = "click",
+                    #dblclick = "dblclick",
+                    #hover = "hover",
+                    #brush = "brush",
                 ),
                 width = 8,
             ),
             tabBox(
                 tabPanel(
-                "Stats",
-                verbatimTextOutput("stats"),
+                    "Options",
+                    radioButtons(
+                      "drType",
+                      label = "Date Range Type:",
+                      choices = c(
+                        "Simple",
+                        "Range Input",
+                        "Date Range Selector",
+                        "Date Range Slider"
+                      ),
+                      selected = "Simple",
+                      inline = TRUE
+                    ),
+                    numericInput(
+                        "drNum",
+                        label = "Date Range:",
+                        value = 3,
+                    ),
+                    radioButtons(
+                        "drUnit",
+                        label = NULL,
+                        choices = c(
+                            "Days",
+                            "Weeks",
+                            "Months",
+                            "Years"
+                        ),
+                        selected = "Months",
+                        inline = TRUE
+                    ),
+                    radioButtons(
+                        "drSimple",
+                        label = "Date Range:",
+                        choices = c(
+                            `30 Days` = Sys.Date() - 30,
+                            `90 Days` = Sys.Date() - 90,
+                            `1 Year` = Sys.Date() - 365,
+                            `2 Years` = Sys.Date() - 365*2,
+                            `3 Years` = Sys.Date() - 365*3,
+                            `All Time` = Sys.Date() - 99999
+                        ),
+                        selected = c(`90 Days` = Sys.Date() - 90),
+                        inline = TRUE
+                    ),
+                    dateRangeInput(
+                        "drSelector",
+                        label = "Date Range:",
+                        start = Sys.Date() - 90,
+                        end = Sys.Date()
+                    ),
+                    sliderInput(
+                        "drSlider",
+                        "Dates:",
+                        min = as.Date("2021-01-01","%Y-%m-%d"),
+                        max = Sys.Date(),
+                        value = c(Sys.Date() - 90 ,Sys.Date()),
+                        timeFormat="%Y-%m-%d"
+                    ),
+                ), 
+                tabPanel(
+                    "Stats",
+                    verbatimTextOutput("stats"),
                 ),
                 tabPanel(
                     "Goal Projection",
@@ -93,12 +145,62 @@ server <- function(input, output) {
     
     pred <- predict(spl, as.numeric(rng))
     
-    
+    show("drSimple")
+    hide("drSelector")
+    hide("drSlider")
+    hide("drNum")
+    hide("drUnit")
     get_date_range <- reactive({
-        c(
-          as.POSIXct(input$dateRange),
-          as.POSIXct(Sys.Date())
-        )
+        type = input$drType
+        
+        if(type == "Date Range Selector") {
+          hide("drSimple")
+          show("drSelector")
+          hide("drSlider")
+          hide("drNum")
+          hide("drUnit")
+
+          return(as.POSIXct(input$drSelector))
+
+        } else if(type == "Date Range Slider") {
+          hide("drSimple")
+          hide("drSelector")
+          show("drSlider")
+          hide("drNum")
+          hide("drUnit")
+
+          return(as.POSIXct(input$drSlider))
+          
+        } else if(type == "Range Input") {
+          hide("drSimple")
+          hide("drSelector")
+          hide("drSlider")
+          show("drNum")
+          show("drUnit")
+          
+          return(
+            as.POSIXct(c(
+              Sys.Date() - period(input$drNum, tolower(input$drUnit)),
+              Sys.Date()
+            ))
+          )
+          
+        } else {
+          show("drSimple")
+          hide("drSelector")
+          hide("drSlider")
+          hide("drNum")
+          hide("drUnit")
+          
+          return(
+            c(
+              as.POSIXct(input$drSimple),
+              as.POSIXct(Sys.Date())
+            )
+          )
+          
+        }
+        
     })
     
     get_data <- reactive({
@@ -181,6 +283,9 @@ server <- function(input, output) {
         expsmooth = get_expsmooth()
         df <- get_df()
         
+        x <- input$click$x
+        y <- input$click$y
+        
         ggplot() +
             geom_point(
                 aes(y = weight, x = date, color = "Observed Weight"),
@@ -197,6 +302,7 @@ server <- function(input, output) {
                 method = "lm",
                 linetype = 2,
                 linewidth = 1,
+                formula = y ~ x,
                 se = FALSE
                 ) +
             scale_color_manual(
