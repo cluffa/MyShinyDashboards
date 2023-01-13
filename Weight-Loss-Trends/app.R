@@ -25,70 +25,86 @@ ui <- dashboardPage(
                     #hover = "hover",
                     #brush = "brush",
                 ),
+                height = "580px"
             ),
-            box(
-                title = "Options",
-                radioButtons(
-                    "drType",
-                    label = "Date Range Type:",
-                    choices = c(
-                        "Preset",
-                        "Range Input",
-                        "Date Range Selector",
-                        "Date Range Slider"
-                    ),
-                    selected = "Preset",
-                    inline = TRUE
-                ),
-                numericInput(
-                    "drNum",
-                    label = "Date Range:",
-                    value = 3,
-                    width = "100px"
-                ),
-                radioButtons(
-                    "drUnit",
-                    label = NULL,
-                    choices = c(
-                        "Days",
-                        "Weeks",
-                        "Months",
-                        "Years"
-                    ),
-                    selected = "Months",
-                    inline = TRUE
-                ),
-                radioButtons(
-                    "drSimple",
-                    label = "Date Range:",
-                    choices = c(
-                        `30 Days` = Sys.Date() - 30,
-                        `90 Days` = Sys.Date() - 90,
-                        `1 Year` = Sys.Date() - 365,
-                        `2 Years` = Sys.Date() - 365*2,
-                        `3 Years` = Sys.Date() - 365*3,
-                        `All Time` = Sys.Date() - 99999
-                    ),
-                    selected = c(`90 Days` = Sys.Date() - 90),
-                    inline = TRUE
-                ),
-                dateRangeInput(
-                    "drSelector",
-                    label = "Date Range:",
-                    start = Sys.Date() - 90,
-                    end = Sys.Date()
-                ),
-                sliderInput(
-                    "drSlider",
-                    "Dates:",
-                    min = as.Date("2021-01-01","%Y-%m-%d"),
-                    max = Sys.Date(),
-                    value = c(Sys.Date() - 90 ,Sys.Date()),
-                    timeFormat="%Y-%m-%d"
-                ),
-            ), 
-            
             tabBox(
+                height = "580px",
+                tabPanel(
+                    title = "Options",
+                    radioButtons(
+                        "drType",
+                        label = "Date Range Type:",
+                        choices = c(
+                            "Preset",
+                            "Range Input",
+                            "Date Range Selector",
+                            "Date Range Slider"
+                        ),
+                        selected = "Preset",
+                        inline = TRUE
+                    ),
+                    numericInput(
+                        "drNum",
+                        label = "Date Range:",
+                        value = 3,
+                        width = "100px"
+                    ),
+                    radioButtons(
+                        "drUnit",
+                        label = NULL,
+                        choices = c(
+                            "Days",
+                            "Weeks",
+                            "Months",
+                            "Years"
+                        ),
+                        selected = "Months",
+                        inline = TRUE
+                    ),
+                    radioButtons(
+                        "drSimple",
+                        label = "Date Range:",
+                        choices = c(
+                            `30 Days` = Sys.Date() - 30,
+                            `90 Days` = Sys.Date() - 90,
+                            `1 Year` = Sys.Date() - 365,
+                            `2 Years` = Sys.Date() - 365*2,
+                            `3 Years` = Sys.Date() - 365*3,
+                            `All Time` = Sys.Date() - 99999
+                        ),
+                        selected = c(`90 Days` = Sys.Date() - 90),
+                        inline = TRUE
+                    ),
+                    dateRangeInput(
+                        "drSelector",
+                        label = "Date Range:",
+                        start = Sys.Date() - 90,
+                        end = Sys.Date()
+                    ),
+                    sliderInput(
+                        "drSlider",
+                        "Dates:",
+                        min = as.Date("2021-01-01","%Y-%m-%d"),
+                        max = Sys.Date(),
+                        value = c(Sys.Date() - 90 ,Sys.Date()),
+                        timeFormat="%Y-%m-%d"
+                    ),
+                    # checkboxGroupInput(
+                    #     "plots",
+                    #     "Show/Hide additional Plots:",
+                    #     choiceNames = c("Show Body Fat Plot", "Show calorie Diff Plot"),
+                    #     choiceValues = c("bfp", "cals")
+                    # ),
+                    sliderInput(
+                        "smoothing",
+                        label = "Spline Smoothing:",
+                        min = 0,
+                        max = 1,
+                        step = 0.05,
+                        value = 0.4,
+                        
+                    ),
+                ),
                 tabPanel(
                     "Stats",
                     verbatimTextOutput("stats"),
@@ -119,31 +135,50 @@ ui <- dashboardPage(
                         to predict when I will meet my goal weight.
                         ")
                 )
-            )
+            ),
+            # box(
+            #     id = "bfp",
+            #     title = "Body Fat Percent (estimated from smart scale)",
+            #     plotOutput("bfpPlot"),
+            # ),
+            # box(
+            #     id = "cal",
+            #     title = "Caloric Deficit/Excess",
+            #     plotOutput("calPlot"),
+            # )
         )
     )
 )
 
 server <- function(input, output) {
+    hide("cal")
+    hide("bfp")
   
     df <- readr::read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
         col_names = c("date", "weight", "unit", "fat", "lean"),
         col_types = "cncnn",
         skip = 1
-    ) |> dplyr::arrange(
+    ) |> arrange(
         date
+    ) |> mutate(
+        bfp = round(fat/lean * 100, 1)
     )
     
     df$date <- as.POSIXct(df$date) |> force_tz(tzone = "EST")
-    spl <- smooth.spline(df$date, df$weight, spar = 0.4)
+    
+    spl <- reactive({
+        smooth.spline(df$date, df$weight, spar = input$smoothing)
+    })
     
     rng_start <- floor_date(df$date[1], "days")
     rng_stop <- ceiling_date(tail(df$date, 1), "days")
 
     rng <- seq(rng_start, rng_stop, by = "24 hours")
     
-    pred <- predict(spl, as.numeric(rng))
+    pred <- reactive({
+        predict(spl(), as.numeric(rng))
+    })
     
     hide("drSelector")
     hide("drSlider")
@@ -220,14 +255,22 @@ server <- function(input, output) {
         lm(weight ~ date, pred)
     })
     
+    get_cals <- reactive({
+        pred <- pred()
+        c(diff(pred$y), NA) * 3500
+    })
+    
     get_spline_pred_in_range <- reactive({
+        pred <- pred()
         range <- get_date_range()
+        cals <- get_cals()
     
         in_rng <- pred$x >= range[1] & pred$x <= range[2] + 86400
         
         data.frame(
-            date = as.POSIXct(pred$x[in_rng], origin = "1970-1-1"),
-            weight = pred$y[in_rng]
+            date = as.POSIXct(pred()$x[in_rng], origin = "1970-1-1"),
+            weight = pred$y[in_rng],
+            cals = cals[in_rng]
         )
     })
     
@@ -272,6 +315,38 @@ server <- function(input, output) {
         df$date <- as.POSIXct(df$date)
         
         return(df)
+    })
+    
+    output$bfpPlot <- renderPlot({
+        if("bfp" %in% input$plots) {
+            show("bfp")
+            out <- ggplot(get_df()) +
+                geom_point(aes(date, bfp)) +
+                ylab("body fat percent") +
+                theme_bw()
+            return(out)
+        } else {
+            hide("bpf")
+        }
+        ggplot() + theme_bw()
+    })
+        
+    output$calPlot <- renderPlot({
+        if("cals" %in% input$plots) {
+            show("cal")
+            df <- get_spline_pred_in_range()
+            
+            out <- ggplot(df) +
+                geom_hline(yintercept = 0, color = "red") +
+                geom_line(aes(date, cals)) +
+                theme_bw() +
+                ylab("calories")
+            
+            return(out)
+        } else {
+            hide("cal")
+        }
+        ggplot() + theme_bw()
     })
     
     output$plot1 <- renderPlot({
@@ -387,15 +462,13 @@ server <- function(input, output) {
     
     output$table <- renderReactable({
         df1 <- get_daily_avg()
-            
-                                
         reactable(
             df1,
             striped = TRUE,
             compact = TRUE,
             wrap = FALSE,
             showSortable = TRUE,
-            defaultPageSize = 25,
+            defaultPageSize = 15,
             showPageSizeOptions = FALSE,
             pageSizeOptions = c(25,50,100),
             outlined = TRUE,
@@ -405,3 +478,4 @@ server <- function(input, output) {
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
