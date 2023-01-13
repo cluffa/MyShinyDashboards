@@ -5,6 +5,8 @@ library(shinydashboard)
 library(reactable)
 library(lubridate)
 library(shinyjs)
+library(DescTools)
+library(rootSolve)
 
 ui <- dashboardPage(
     dashboardHeader(disable = TRUE),
@@ -272,6 +274,17 @@ server <- function(input, output) {
         )
     })
     
+    get_where_cals_is_zero <- reactive({
+        pred <- get_spline_pred_in_range()
+        as.POSIXct(
+            uniroot.all(
+                approxfun(pred$date, pred$cals),
+                interval = range(as.numeric(pred$date))
+            ),
+            origin = "1970-1-1"
+        )
+    })
+    
     get_gw <- reactive({
         input$goalwt
     })
@@ -290,30 +303,30 @@ server <- function(input, output) {
             )
     })
     
-    get_expsmooth <- reactive({
-        range <- get_date_range()
-        
-        df <- get_daily_avg()
-        df <- df[df$date >= range[1] & df$date <= range[2] + 86400,] |> 
-            arrange(
-                date
-            )
-        
-        x = df$weight
-        alpha = 0.1
-        s = numeric(length(x) + 1)
-        for (i in seq_along(s)) {
-            if (i == 1) {
-                s[i] <- x[i]
-            } else {
-                s[i] <- alpha * x[i - 1] + (1 - alpha) * s[i - 1]
-            }
-        }
-        df$weight <- s[-1]
-        df$date <- as.POSIXct(df$date)
-        
-        return(df)
-    })
+    # get_expsmooth <- reactive({
+    #     range <- get_date_range()
+    #     
+    #     df <- get_daily_avg()
+    #     df <- df[df$date >= range[1] & df$date <= range[2] + 86400,] |> 
+    #         arrange(
+    #             date
+    #         )
+    #     
+    #     x = df$weight
+    #     alpha = 0.1
+    #     s = numeric(length(x) + 1)
+    #     for (i in seq_along(s)) {
+    #         if (i == 1) {
+    #             s[i] <- x[i]
+    #         } else {
+    #             s[i] <- alpha * x[i - 1] + (1 - alpha) * s[i - 1]
+    #         }
+    #     }
+    #     df$weight <- s[-1]
+    #     df$date <- as.POSIXct(df$date)
+    #     
+    #     return(df)
+    # })
     
     # output$bfpPlot <- renderPlot({
     #     ggplot(get_df()) +
@@ -321,16 +334,39 @@ server <- function(input, output) {
     #         ylab("body fat percent") +
     #         theme_bw()
     # })
-        
+    
     output$calPlot <- renderPlot({
         df <- get_spline_pred_in_range()
         
-        ggplot(df) +
+        #zero <- c(min(df$date), get_where_cals_is_zero(), max(df$date))
+        #colors <- rep(ifelse(df$cals[df$date[1]] < 0, c("blue", "red"), c("red", "blue")), length.out = length(zero))
+        
+        p <- ggplot(df) +
             geom_hline(yintercept = 0, color = "red") +
-            geom_line(aes(date, cals)) +
+            geom_line(aes(date, cals), color = "blue") +
+            geom_area(
+                aes(date, cals),
+                alpha = 0.2,
+                fill = "blue"
+            ) +
             theme_bw() +
             ylab("calories") +
-            labs(title = "change spline smoothing to 0.65 to best reflect actual diet changes")
+            labs(
+                title = "change spline smoothing to 0.65 to best reflect actual diet changes",
+                #subtitle = toString(zero[1] %in% df$date)
+            )
+        
+        # for (i in 1:length(zero) - 1) {
+        #     p <- p +
+        #       geom_area(
+        #           aes(date, cals),
+        #           data = df, #|> filter(date < zero[i], date > zero[i+1]),
+        #           alpha = 0.5,
+        #           fill = colors[i]
+        #       )
+        # }
+        
+        return(p)
     })
     
     output$plot1 <- renderPlot({
@@ -338,7 +374,6 @@ server <- function(input, output) {
         coefs <- model$coefficients
         range <- get_date_range()
         spl <- get_spline_pred_in_range()
-        expsmooth = get_expsmooth()
         df <- get_df()
         
         x <- input$click$x
@@ -454,7 +489,8 @@ server <- function(input, output) {
             showPageSizeOptions = FALSE,
             pageSizeOptions = c(25,50,100),
             outlined = TRUE,
-            resizable = FALSE,)
+            resizable = FALSE,
+        )
     })
 }
 

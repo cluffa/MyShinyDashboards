@@ -64,6 +64,18 @@ ggplot(df, aes(date, abs(dif))) +
 ggplot(df, aes(time)) +
   geom_histogram(bins = 24)
 
-spline = smooth.spline(df$date, df$weight)
 
+spl = smooth.spline(df$date, df$weight)
+rng_start <- floor_date(df$date[1], "days")
+rng_stop <- ceiling_date(tail(df$date, 1), "days")
+rng <- seq(rng_start, rng_stop, by = "24 hours")
 
+pred <- predict(spl, as.numeric(rng)) |>
+    data.frame() |> 
+    transmute(
+        date = x,
+        weight = y,
+        cals = c(diff(weight), NA) * 3500
+    )
+
+uniroot.all(approxfun(pred$date, pred$cals), interval = range(pred$date))
