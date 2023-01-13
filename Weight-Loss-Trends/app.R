@@ -107,7 +107,6 @@ ui <- dashboardPage(
                         max = 1,
                         step = 0.05,
                         value = 0.4,
-                        
                     ),
                 ),
                 tabPanel(
@@ -330,7 +329,8 @@ server <- function(input, output) {
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals)) +
             theme_bw() +
-            ylab("calories")
+            ylab("calories") +
+            labs(title = "change spline smoothing to 0.65 to best reflect actual diet changes")
     })
     
     output$plot1 <- renderPlot({
