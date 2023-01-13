@@ -27,10 +27,10 @@ ui <- dashboardPage(
                         #brush = "brush",
                     ),
                 ),
-                tabPanel(
-                    title = "Body Fat Percent (estimated from smart scale)",
-                    plotOutput("bfpPlot", height = "500px"),
-                ),
+                # tabPanel(
+                #     title = "Body Fat Percent (estimated from smart scale)",
+                #     plotOutput("bfpPlot", height = "500px"),
+                # ),
                 tabPanel(
                     title = "Caloric Deficit/Excess",
                     plotOutput("calPlot", height = "500px"),
@@ -38,6 +38,7 @@ ui <- dashboardPage(
                 height = "580px"
             ),
             tabBox(
+                id = "tabs",
                 height = "580px",
                 tabPanel(
                     title = "Options",
@@ -114,6 +115,12 @@ ui <- dashboardPage(
                     verbatimTextOutput("stats"),
                 ),
                 tabPanel(
+                    "Model Stats",
+                    verbatimTextOutput("models"),
+                    tags$head(tags$style("#models{font-size: 12px;}")),
+                    #style="height: 500px ;overflow-y: scroll;"
+                ),
+                tabPanel(
                     "Goal Projection",
                     sliderInput(
                         "goalwt",
@@ -146,9 +153,6 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
-    hide("cal")
-    hide("bfp")
-  
     df <- readr::read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
         col_names = c("date", "weight", "unit", "fat", "lean"),
@@ -312,12 +316,12 @@ server <- function(input, output) {
         return(df)
     })
     
-    output$bfpPlot <- renderPlot({
-        ggplot(get_df()) +
-            geom_point(aes(date, bfp)) +
-            ylab("body fat percent") +
-            theme_bw()
-    })
+    # output$bfpPlot <- renderPlot({
+    #     ggplot(get_df()) +
+    #         geom_point(aes(date, bfp)) +
+    #         ylab("body fat percent") +
+    #         theme_bw()
+    # })
         
     output$calPlot <- renderPlot({
         df <- get_spline_pred_in_range()
@@ -431,12 +435,10 @@ server <- function(input, output) {
         )
     })
     
-    output$model <- renderPrint({
+    output$models <- renderPrint({
         model <- get_model()
-        coef <- unname(model$coefficients[2])*86400
-        
-        cat("Model (date in seconds):", sep = "\n")
-        
+        spl <- spl()
+        print(spl)
         summary(model)
     })
     
