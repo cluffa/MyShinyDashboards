@@ -15,15 +15,25 @@ ui <- dashboardPage(
     dashboardBody(
         # Boxes need to be put in a row (or column)
         fluidRow(
-            box(
-                title = "Body Weight",
-                plotOutput(
-                    "plot1",
-                    height = "500px",
-                    #click = "click",
-                    #dblclick = "dblclick",
-                    #hover = "hover",
-                    #brush = "brush",
+            tabBox(
+                tabPanel(
+                    title = "Body Weight",
+                    plotOutput(
+                        "plot1",
+                        height = "500px",
+                        #click = "click",
+                        #dblclick = "dblclick",
+                        #hover = "hover",
+                        #brush = "brush",
+                    ),
+                ),
+                tabPanel(
+                    title = "Body Fat Percent (estimated from smart scale)",
+                    plotOutput("bfpPlot", height = "500px"),
+                ),
+                tabPanel(
+                    title = "Caloric Deficit/Excess",
+                    plotOutput("calPlot", height = "500px"),
                 ),
                 height = "580px"
             ),
@@ -89,12 +99,6 @@ ui <- dashboardPage(
                         value = c(Sys.Date() - 90 ,Sys.Date()),
                         timeFormat="%Y-%m-%d"
                     ),
-                    # checkboxGroupInput(
-                    #     "plots",
-                    #     "Show/Hide additional Plots:",
-                    #     choiceNames = c("Show Body Fat Plot", "Show calorie Diff Plot"),
-                    #     choiceValues = c("bfp", "cals")
-                    # ),
                     sliderInput(
                         "smoothing",
                         label = "Spline Smoothing:",
@@ -136,16 +140,7 @@ ui <- dashboardPage(
                         ")
                 )
             ),
-            # box(
-            #     id = "bfp",
-            #     title = "Body Fat Percent (estimated from smart scale)",
-            #     plotOutput("bfpPlot"),
-            # ),
-            # box(
-            #     id = "cal",
-            #     title = "Caloric Deficit/Excess",
-            #     plotOutput("calPlot"),
-            # )
+
         )
     )
 )
@@ -318,35 +313,20 @@ server <- function(input, output) {
     })
     
     output$bfpPlot <- renderPlot({
-        if("bfp" %in% input$plots) {
-            show("bfp")
-            out <- ggplot(get_df()) +
-                geom_point(aes(date, bfp)) +
-                ylab("body fat percent") +
-                theme_bw()
-            return(out)
-        } else {
-            hide("bpf")
-        }
-        ggplot() + theme_bw()
+        ggplot(get_df()) +
+            geom_point(aes(date, bfp)) +
+            ylab("body fat percent") +
+            theme_bw()
     })
         
     output$calPlot <- renderPlot({
-        if("cals" %in% input$plots) {
-            show("cal")
-            df <- get_spline_pred_in_range()
-            
-            out <- ggplot(df) +
-                geom_hline(yintercept = 0, color = "red") +
-                geom_line(aes(date, cals)) +
-                theme_bw() +
-                ylab("calories")
-            
-            return(out)
-        } else {
-            hide("cal")
-        }
-        ggplot() + theme_bw()
+        df <- get_spline_pred_in_range()
+        
+        ggplot(df) +
+            geom_hline(yintercept = 0, color = "red") +
+            geom_line(aes(date, cals)) +
+            theme_bw() +
+            ylab("calories")
     })
     
     output$plot1 <- renderPlot({
