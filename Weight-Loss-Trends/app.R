@@ -32,12 +32,12 @@ ui <- dashboardPage(
                     "drType",
                     label = "Date Range Type:",
                     choices = c(
-                        "Simple",
+                        "Preset",
                         "Range Input",
                         "Date Range Selector",
                         "Date Range Slider"
                     ),
-                    selected = "Simple",
+                    selected = "Preset",
                     inline = TRUE
                 ),
                 numericInput(
