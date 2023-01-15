@@ -344,16 +344,15 @@ server <- function(input, output) {
         p <- ggplot(df) +
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals), color = "blue") +
-            geom_area(
-                aes(date, cals),
-                alpha = 0.2,
-                fill = "blue"
-            ) +
+            # geom_area(
+            #     aes(date, cals),
+            #     alpha = 0.2,
+            #     fill = "blue"
+            # ) +
             theme_bw() +
             ylab("calories") +
             labs(
                 title = "change spline smoothing to 0.65 to best reflect actual diet changes",
-                #subtitle = toString(zero[1] %in% df$date)
             )
         
         # for (i in 1:length(zero) - 1) {
