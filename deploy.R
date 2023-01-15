@@ -7,9 +7,9 @@ myCluster <- makeCluster(3, type = "PSOCK")
 registerDoParallel(myCluster)
 
 getenv <- function(name){
-  var <- Sys.getenv(name)
-  if(var != ""){
-    stop(paste0("cannot find ",name, " !"),call. = FALSE)
+  var <- Sys.getenv(name, unset = NA)
+  if(is.na(var)){
+    stop(paste0("cannot find ",name, "!"),call. = FALSE)
   }
   gsub("\"", '',var)
 }
