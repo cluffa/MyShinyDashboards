@@ -5,8 +5,7 @@ library(shinydashboard)
 library(reactable)
 library(lubridate)
 library(shinyjs)
-library(DescTools)
-library(rootSolve)
+library(shinyWidgets)
 
 ui <- dashboardPage(
     dashboardHeader(disable = TRUE),
@@ -15,7 +14,6 @@ ui <- dashboardPage(
         disable = TRUE
     ),
     dashboardBody(
-        # Boxes need to be put in a row (or column)
         fluidRow(
             tabBox(
                 tabPanel(
@@ -23,16 +21,8 @@ ui <- dashboardPage(
                     plotOutput(
                         "plot1",
                         height = "500px",
-                        #click = "click",
-                        #dblclick = "dblclick",
-                        #hover = "hover",
-                        #brush = "brush",
                     ),
                 ),
-                # tabPanel(
-                #     title = "Body Fat Percent (estimated from smart scale)",
-                #     plotOutput("bfpPlot", height = "500px"),
-                # ),
                 tabPanel(
                     title = "Caloric Deficit/Excess",
                     plotOutput("calPlot", height = "500px"),
@@ -109,6 +99,16 @@ ui <- dashboardPage(
                         max = 1,
                         step = 0.05,
                         value = 0.4,
+                    ),
+                    awesomeCheckbox(
+                        "showGoal",
+                        label = "Show Projected Goal on Body Weight Plot",
+                        status = "primary"
+                    ),
+                    awesomeCheckbox(
+                        "showMM",
+                        label = "Show Min/Max Weights",
+                        status = "primary"
                     ),
                 ),
                 tabPanel(
@@ -303,111 +303,53 @@ server <- function(input, output) {
             )
     })
     
-    # get_expsmooth <- reactive({
-    #     range <- get_date_range()
-    #     
-    #     df <- get_daily_avg()
-    #     df <- df[df$date >= range[1] & df$date <= range[2] + 86400,] |> 
-    #         arrange(
-    #             date
-    #         )
-    #     
-    #     x = df$weight
-    #     alpha = 0.1
-    #     s = numeric(length(x) + 1)
-    #     for (i in seq_along(s)) {
-    #         if (i == 1) {
-    #             s[i] <- x[i]
-    #         } else {
-    #             s[i] <- alpha * x[i - 1] + (1 - alpha) * s[i - 1]
-    #         }
-    #     }
-    #     df$weight <- s[-1]
-    #     df$date <- as.POSIXct(df$date)
-    #     
-    #     return(df)
-    # })
-    
-    # output$bfpPlot <- renderPlot({
-    #     ggplot(get_df()) +
-    #         geom_point(aes(date, bfp)) +
-    #         ylab("body fat percent") +
-    #         theme_bw()
-    # })
-    
     output$calPlot <- renderPlot({
         df <- get_spline_pred_in_range()
-        
-        #zero <- c(min(df$date), get_where_cals_is_zero(), max(df$date))
-        #colors <- rep(ifelse(df$cals[df$date[1]] < 0, c("blue", "red"), c("red", "blue")), length.out = length(zero))
-        
+       
         p <- ggplot(df) +
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals), color = "blue") +
-            # geom_area(
-            #     aes(date, cals),
-            #     alpha = 0.2,
-            #     fill = "blue"
-            # ) +
             theme_bw() +
             ylab("calories") +
             labs(
-                title = "change spline smoothing to 0.65 to best reflect actual diet changes",
+                subtitle = "change spline smoothing to 0.65 to best reflect actual diet changes",
             )
-        
-        # for (i in 1:length(zero) - 1) {
-        #     p <- p +
-        #       geom_area(
-        #           aes(date, cals),
-        #           data = df, #|> filter(date < zero[i], date > zero[i+1]),
-        #           alpha = 0.5,
-        #           fill = colors[i]
-        #       )
-        # }
         
         return(p)
     })
     
     output$plot1 <- renderPlot({
-        model <- get_model()
-        coefs <- model$coefficients
         range <- get_date_range()
-        spl <- get_spline_pred_in_range()
         df <- get_df()
+        gw_df <- get_goal_date()
+        spl <- get_spline_pred_in_range()
         
-        x <- input$click$x
-        y <- input$click$y
+        mm <- df[c(which.max(df$weight), which.min(df$weight)),]
+        mm$label <- c("max", "min")
         
-        ggplot() +
+        p <- ggplot() +
             geom_point(
                 aes(y = weight, x = date, color = "Observed Weight"),
                 data = df,
-                ) +
+            ) +
             geom_line(
                 aes(date, weight, color = "Spline Fit"),
                 data = spl,
                 linewidth = 1
-                ) +
-            geom_smooth(
-                aes(x = date, y = weight, color = "Linear Model"),
-                data = spl,
-                method = "lm",
-                linetype = 2,
-                linewidth = 1,
-                formula = y ~ x,
-                se = FALSE
-                ) +
+            ) +
             scale_color_manual(
                 name = NULL,
                 breaks = c(
                     "Observed Weight",
                     "Spline Fit",
-                    "Linear Model"
+                    "Linear Model",
+                    "Projected Goal Date"
                 ),
                 values = c(
                     "Observed Weight" = "darkgray",
                     "Spline Fit" = "blue",
-                    "Linear Model" = "red"
+                    "Linear Model" = "red",
+                    "Projected Goal Date" = "green"
                 )
             ) +
             theme_bw() +
@@ -415,6 +357,82 @@ server <- function(input, output) {
                 legend.position = c(0.18, 0.1),
                 legend.background = element_rect(fill = "transparent")
             )
+        
+        if (input$showGoal) {
+            p <- p + geom_point(
+                aes(y = weight, x = date, color = "Projected Goal Date"),
+                data = gw_df,
+                size = 3
+            ) + 
+            geom_smooth(
+                aes(x = date, y = weight, color = "Linear Model"),
+                data = bind_rows(spl, gw_df),
+                method = "lm",
+                linetype = 2,
+                linewidth = 1,
+                formula = y ~ x,
+                se = FALSE
+            ) +
+            geom_text(
+                aes(
+                    x = date,
+                    y = weight,
+                    label = format(date, "%Y-%m-%d"),
+                    fontface = "bold"
+                ),
+                data = gw_df,
+                vjust = "outward",
+                hjust = "inward",
+                nudge_y = -1
+            )
+        } else {
+            p <- p +
+                geom_smooth(
+                    aes(x = date, y = weight, color = "Linear Model"),
+                    data = spl,
+                    method = "lm",
+                    linetype = 2,
+                    linewidth = 1,
+                    formula = y ~ x,
+                    se = FALSE
+                )
+        }
+        
+        if (input$showMM) {
+            p <- p +
+                geom_text(
+                    aes(
+                        x = date,
+                        y = weight,
+                        label = paste(" ", weight, label, " "), 
+                        fontface = "bold"
+                    ),
+                    data = mm,
+                    hjust = "inward",
+                    vjust = "outward",
+                ) +
+                geom_point(
+                        aes(
+                            x = date,
+                            y = weight,
+                        ),
+                        data = mm,
+                        size = 2
+                ) 
+        }
+        
+        return(p)
+    })
+    
+    get_goal_date <- reactive({
+        gw <- get_gw()
+        model <- get_model()
+        gwdate <- (gw - model$coefficients[1])/model$coefficients[2]
+        
+        data.frame(
+            weight = gw,
+            date = as.POSIXct(gwdate, origin = "1970-1-1")
+        )
     })
     
     output$summary <- renderPrint({
