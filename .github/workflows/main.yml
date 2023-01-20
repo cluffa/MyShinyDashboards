@@ -24,14 +24,14 @@ jobs:
       # build the docker image and give it the name main
       #- name: Build image
       #  run: docker build -t main . 
-      
+
       # run the docker image supply the secrets from the github secrets store.  
       - name: execute
         run: >
           docker run
           -e TOKEN=${{secrets.TOKEN}} 
           -e SECRET=${{secrets.SECRET}}
-          -v ./:/home/shinyusr
+          -v "$(pwd)"/:/home/shinyusr
           dankypants/shinypush
 
 
