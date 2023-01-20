@@ -32,3 +32,4 @@ shiny-examples/
 Weight-Loss-Trends/core
 rsconnect/
 .DS_Store
+.ipynb_checkpoints

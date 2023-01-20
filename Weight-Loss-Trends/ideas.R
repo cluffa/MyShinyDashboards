@@ -79,3 +79,52 @@ pred <- predict(spl, as.numeric(rng)) |>
     )
 
 uniroot.all(approxfun(pred$date, pred$cals), interval = range(pred$date))
+
+suppressWarnings({
+    library("tidyverse")
+    library("readr")
+    library("forecast")
+    library("tsibble")
+    library("tibbletime")
+    library("mice")
+})
+
+sheet <- read_csv(
+        "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
+        col_names = c("date", "weight", "unit", "fat", "lean"),
+        col_types = "cncnn",
+        skip = 1
+    )
+
+
+df <- sheet |>
+    mutate(
+        date = as.POSIXct(date) |> force_tz(tzone = "EST") |> date()
+    ) |>
+    group_by(
+        date
+    ) |>
+    summarise(
+        weight = round(mean(weight), 1)
+    ) |>
+    as_tsibble(index = date) |>
+    fill_gaps() |>
+    mutate(
+        weight = na.interp(weight)
+    ) |>
+    tail(n = 180)
+
+df |> head()
+
+plot(df)
+
+mean_roll <- rollify(mean, window = 10)
+df |> mutate(weight = mean_roll(weight)) |> plot()
+
+ts <- ts(df$weight)
+
+aa <- auto.arima(ts); aa
+
+predict(aa, n.ahead = 30)
+
+forecast(ts, h = 20) |> autoplot()

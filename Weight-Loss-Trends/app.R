@@ -213,10 +213,10 @@ server <- function(input, output) {
             show("drUnit")
             
             return(
-              as.POSIXct(c(
-                Sys.Date() - period(input$drNum, tolower(input$drUnit)),
-                Sys.Date()
-              ))
+                as.POSIXct(c(
+                    Sys.Date() - period(input$drNum, tolower(input$drUnit)),
+                    Sys.Date()
+                ))
             )
           
         } else {
@@ -227,10 +227,10 @@ server <- function(input, output) {
             hide("drUnit")
             
             return(
-              c(
-                as.POSIXct(input$drSimple),
-                as.POSIXct(Sys.Date())
-              )
+                c(
+                    as.POSIXct(input$drSimple),
+                    as.POSIXct(Sys.Date())
+                )
             )
           
         }
@@ -446,11 +446,14 @@ server <- function(input, output) {
         cals = (dif * 3500) / nrow(spl)
         
         gwdate <- (gw - model$coefficients[1])/model$coefficients[2]
+        gwdate <- as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1"))
+        weeks <- round((gwdate - Sys.Date()) / 7, 1)
         
         cat(
             "Daily Trend:", coef, "lbs/day",
             "\nWeekly Trend:", coef*7, "lbs/week",
-            "\nGoal Projection:", gw, "on", as.character(as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1"))),
+            "\nGoal Projection:", as.character(gwdate), 
+            paste0("(", as.character(weeks), " Weeks)"),
             "\nAvg Daily Diff From Net Calories:", round(cals, 0)
             )
         
