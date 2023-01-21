@@ -1,11 +1,11 @@
 library(rsconnect)
 
-DIR <- getenv("DIR")
+DIR <- Sys.getenv("DIR")
 
 setAccountInfo(
     name = "cluffa",
-    token = Sys.getenv("TOKEN", unset = NA),
-    secret = Sys.getenv("SECRET", unset = NA)
+    token = Sys.getenv("TOKEN"),
+    secret = Sys.getenv("SECRET")
 )
 
 deployApp(
