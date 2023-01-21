@@ -5,6 +5,7 @@ library(shiny)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
+library(readr)
 
 library(shinydashboard)
 library(reactable)
@@ -158,7 +159,7 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
-    df <- readr::read_csv(
+    df <- read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
         col_names = c("date", "weight", "unit", "fat", "lean"),
         col_types = "cncnn",
@@ -242,7 +243,7 @@ server <- function(input, output) {
     })
     
     get_data <- reactive({
-        df <- dplyr::arrange(df, desc(date))
+        df <- arrange(df, desc(date))
         df
     })
     
@@ -294,15 +295,15 @@ server <- function(input, output) {
     })
     
     get_daily_avg <- reactive({
-        dplyr::transmute(
+        transmute(
                 get_data(),
                 date = date(date),
                 weight = weight
-            ) |> dplyr::group_by(
+            ) |> group_by(
                 date
-            ) |> dplyr::summarise(
+            ) |> summarise(
                 weight = round(mean(weight), 1)
-            ) |> dplyr::arrange(
+            ) |> arrange(
                 desc(date)
             )
     })
@@ -465,11 +466,11 @@ server <- function(input, output) {
     
     output$stats <- renderPrint({
         df <- get_df() |> 
-            dplyr::mutate(
+            mutate(
                 date = format(date, "%Y-%m-%d")
             )
         full_df <- get_data() |> 
-            dplyr::mutate(
+            mutate(
                 date = format(date, "%Y-%m-%d")
             )
         
