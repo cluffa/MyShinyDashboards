@@ -1,9 +1,13 @@
 # Weight Loss Trend
 library(shiny)
-library(tidyverse)
+
+#library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
 library(shinydashboard)
 library(reactable)
-library(lubridate)
 library(shinyjs)
 library(shinyWidgets)
 

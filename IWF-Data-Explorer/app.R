@@ -1,5 +1,10 @@
 # IWF DATA EXPLORER
-library(tidyverse)
+
+#library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
 library(reactable)
 library(shinydashboard)
 
