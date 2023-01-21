@@ -1,9 +1,9 @@
-name: Push Weight-Loss-Trends
+name: Push IWF-Data-Explorer
 
 on:
   push:
     paths:
-      - Weight-Loss-Trends/**
+      - IWF-Data-Explorer/**
 
   workflow_dispatch:
 
@@ -18,7 +18,7 @@ jobs:
       - name: execute
         run: >
           docker run
-          -e DIR=Weight-Loss-Trends
+          -e DIR=IWF-Data-Explorer
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/home/shinyusr

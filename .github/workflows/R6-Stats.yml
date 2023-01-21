@@ -1,9 +1,9 @@
-name: Push Weight-Loss-Trends
+name: Push R6-Stats
 
 on:
   push:
     paths:
-      - Weight-Loss-Trends/**
+      - R6-Stats/**
 
   workflow_dispatch:
 
@@ -18,7 +18,7 @@ jobs:
       - name: execute
         run: >
           docker run
-          -e DIR=Weight-Loss-Trends
+          -e DIR=R6-Stats
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/home/shinyusr

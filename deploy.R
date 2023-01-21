@@ -1,33 +1,18 @@
-getenv <- function(name){
-    var <- Sys.getenv(name, unset = NA)
-    if(is.na(var)){
-        stop(paste0("cannot find ", name, "!"), call. = FALSE)
-    }
-    gsub("\"", '',var)
-}
+library(rsconnect)
 
-TOKEN <- getenv("TOKEN")
-SECRET <- getenv("SECRET")
 DIR <- getenv("DIR")
 
-deploy <- function(dir) {
-    library(rsconnect)
-    setAccountInfo(
-        name = "cluffa",
-        token = TOKEN,
-        secret = SECRET
-    )
-    
-    deployApp(
-        appDir = dir,
-        forceUpdate = TRUE,
-        launch.browser = FALSE
-    )
-    
-    out <- paste0(dir, "Deployed Successfully")
-    message(out)
-    return(out)
-}
+setAccountInfo(
+    name = "cluffa",
+    token = Sys.getenv("TOKEN", unset = NA),
+    secret = Sys.getenv("SECRET", unset = NA)
+)
 
-deploy(DIR)
+deployApp(
+    appDir = DIR,
+    forceUpdate = TRUE,
+    launch.browser = FALSE
+)
 
+out <- paste(DIR, "Deployed Successfully!")
+message(out)
