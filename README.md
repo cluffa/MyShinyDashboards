@@ -1,8 +1,9 @@
 # MyShinyDashboards
-[![Run on push master, main](https://github.com/cluffa/MyShinyDashboards/actions/workflows/main.yml/badge.svg)](https://github.com/cluffa/MyShinyDashboards/actions/workflows/main.yml)
 
 Weight Loss Dashboard:  
+[![Push Weight-Loss-Trends](https://github.com/cluffa/MyShinyDashboards/actions/workflows/weight-loss-trends.yml/badge.svg)](https://github.com/cluffa/MyShinyDashboards/actions/workflows/weight-loss-trends.yml)  
 https://cluffa.shinyapps.io/Weight-Loss-Trends/
 
 IWF Results:  
+[![Push IWF-Data-Explorer](https://github.com/cluffa/MyShinyDashboards/actions/workflows/IWF-Data-Explorer.yml/badge.svg)](https://github.com/cluffa/MyShinyDashboards/actions/workflows/IWF-Data-Explorer.yml)  
 https://cluffa.shinyapps.io/IWF-Data-Explorer/
