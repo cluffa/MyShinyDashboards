@@ -7,43 +7,43 @@ load(url(
   "https://github.com/cluffa/IWF_data/raw/main/all_data.Rdata"
 ))
 
-names <- athletes %>%
-  transmute(name = paste0(name, " (", date_of_birth, ")")) %>% 
-  distinct() %>% 
+names <- athletes |>
+  transmute(name = paste0(name, " (", date_of_birth, ")")) |> 
+  distinct() |> 
   arrange(name)
 names <- names$name
 
-countries <- results %>% 
-  select(nation) %>% 
-  distinct() %>% 
+countries <- results |> 
+  select(nation) |> 
+  distinct() |> 
   arrange(nation)
 countries <- countries$nation
 
-cats <- results %>% 
-  select(category) %>% 
-  distinct() %>% 
+cats <- results |> 
+  select(category) |> 
+  distinct() |> 
   arrange(category)
 
 age_range <- c(min(results$age), max(results$age))
 
-event_names <- events %>% 
-  transmute(name = paste0(event, " (", date, ")"), event_id = event_id) %>% 
-  distinct() %>% 
+event_names <- events |> 
+  transmute(name = paste0(event, " (", date, ")"), event_id = event_id) |> 
+  distinct() |> 
   arrange(name)
 
-age_groups <- events %>% 
-  select(age_group) %>% 
-  distinct() %>% 
+age_groups <- events |> 
+  select(age_group) |> 
+  distinct() |> 
   arrange(age_group)
 
-cities <- events %>% 
-  select(city) %>% 
-  distinct() %>% 
+cities <- events |> 
+  select(city) |> 
+  distinct() |> 
   arrange(city)
 
-countries_event <- events %>% 
-  select(iso_code) %>% 
-  distinct() %>% 
+countries_event <- events |> 
+  select(iso_code) |> 
+  distinct() |> 
   arrange(iso_code)
 
 date_range <- c(min(events$date), max(events$date))
@@ -233,12 +233,12 @@ server <- function(input, output, session) {
   datasetInput <- reactive({
     athlete_ids <- athletes$athlete_id[if (length(input$athletes) > 0) athletes$name %in% str_split(input$athletes, " \\(", simplify = TRUE)[,1] else TRUE]
     output = list(
-      athletes = athletes %>%
+      athletes = athletes |>
         filter(
           if (length(input$athletes) > 0) athlete_id %in% athlete_ids else TRUE,
           if (length(input$nations) > 0) grepl(paste(input$nations, collapse = "|"), nations) else TRUE
           ),
-      results = results %>% 
+      results = results |> 
         filter(
           if (length(input$athletes) > 0) athlete_id %in% athlete_ids else TRUE,
           if (length(input$nations) > 0) nation %in% input$nations else TRUE
@@ -249,7 +249,7 @@ server <- function(input, output, session) {
   })
 
   datasetInputEvent <- reactive({
-    events %>% 
+    events |> 
       filter(
         if (length(input$country) > 0) iso_code %in% input$country else TRUE,
         if (length(input$city) > 0) city %in% input$city else TRUE,
@@ -261,7 +261,7 @@ server <- function(input, output, session) {
   })
 
   observeEvent(datasetInputEvent(), {
-    df = datasetInputEvent() %>% 
+    df = datasetInputEvent() |> 
       arrange(desc(date))
     
     updateSelectizeInput(
@@ -273,10 +273,10 @@ server <- function(input, output, session) {
   })
   
   datasetInputEventResults <- reactive({
-    results %>% 
+    results |> 
       filter(
         input$singleEvent == event
-      ) %>% 
+      ) |> 
       select(-event, -event_id)
   })
   
@@ -346,12 +346,12 @@ server <- function(input, output, session) {
   xaxis <- reactive({input$xAxis})
   
   output$plot <- renderPlot({
-    df <- datasetInput()$results %>%
-      remove_missing() %>% 
+    df <- datasetInput()$results |>
+      remove_missing() |> 
       distinct()
     
-    base <- df %>% 
-      filter(if (input$category != "All") category == input$category else TRUE) %>% 
+    base <- df |> 
+      filter(if (input$category != "All") category == input$category else TRUE) |> 
       ggplot(aes(x = if (xaxis() == "Date") date else if (xaxis() == "Age") age else bw)) +
         theme_bw()
     

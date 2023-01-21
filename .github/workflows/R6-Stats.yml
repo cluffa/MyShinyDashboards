@@ -21,7 +21,7 @@ jobs:
           -e DIR=R6-Stats
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
-          -v "$(pwd)"/:/home/shinyusr
+          -v "$(pwd)"/:/workdir
           dankypants/shinypush
 
 

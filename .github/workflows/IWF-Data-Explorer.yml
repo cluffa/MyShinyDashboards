@@ -21,7 +21,7 @@ jobs:
           -e DIR=IWF-Data-Explorer
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
-          -v "$(pwd)"/:/home/shinyusr
+          -v "$(pwd)"/:/workdir
           dankypants/shinypush
 
 
