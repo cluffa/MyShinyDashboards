@@ -1,11 +1,3 @@
-library(iterators)
-library(parallel)
-library(foreach)
-library(doParallel)
-
-myCluster <- makeCluster(3, type = "PSOCK")
-registerDoParallel(myCluster)
-
 getenv <- function(name){
     var <- Sys.getenv(name, unset = NA)
     if(is.na(var)){
@@ -14,14 +6,9 @@ getenv <- function(name){
     gsub("\"", '',var)
 }
 
-dirs <- c(
-    "IWF-Data-Explorer/",
-    "Weight-Loss-Trends/",
-    "R6-Stats/"
-)
-
 TOKEN <- getenv("TOKEN")
 SECRET <- getenv("SECRET")
+DIR <- getenv("DIR")
 
 deploy <- function(dir) {
     tryCatch(
@@ -54,7 +41,5 @@ deploy <- function(dir) {
     )
 }
 
-foreach(dir = dirs) %dopar% deploy(dir)
-
-stopCluster(myCluster)
+deploy(DIR)
 
