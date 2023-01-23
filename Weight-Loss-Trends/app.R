@@ -13,10 +13,24 @@ library(shinyjs)
 library(shinyWidgets)
 
 ui <- dashboardPage(
-    dashboardHeader(disable = TRUE),
+    title = "Weight Loss Tracking Dashboard",
+    dashboardHeader(
+        title = "Weight Loss Tracking Dashboard"
+    ),
     dashboardSidebar(
         useShinyjs(),
-        disable = TRUE
+        a(
+            p(
+                "Github Link",
+                style = "
+                    font-size: 1em;
+                    margin: 10px
+                "
+            ),
+            href = "https://github.com/cluffa/MyShinyDashboards",
+            
+        ),
+        collapsed = TRUE
     ),
     dashboardBody(
         fluidRow(
@@ -103,7 +117,7 @@ ui <- dashboardPage(
                         min = 0,
                         max = 1,
                         step = 0.05,
-                        value = 0.4,
+                        value = 0.5,
                     ),
                     awesomeCheckbox(
                         "showGoal",
