@@ -2,10 +2,15 @@ name: Push IWF-Data-Explorer
 
 on:
   push:
+    branches:
+      - main
     paths:
       - IWF-Data-Explorer/**
-
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - IWF-Data-Explorer/**
 
 
 jobs:
