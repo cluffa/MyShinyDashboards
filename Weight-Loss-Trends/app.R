@@ -104,6 +104,11 @@ ui <- dashboardPage(
                 label = "Show Min/Max Weights",
                 status = "primary"
             ),
+            awesomeCheckbox(
+                "model30",
+                label = "Fit Linear Model on Last 30 Days Only",
+                status = "primary"
+            ),
         ),
         collapsed = FALSE
     ),
@@ -265,8 +270,8 @@ server <- function(input, output) {
     })
     
     get_model <- reactive({
-        pred <- get_spline_pred_in_range()
-        df <- get_df()
+        shorten <- shorten()
+        pred <- get_spline_pred_in_range() |> shorten()
         lm(weight ~ date, pred)
     })
     
@@ -331,6 +336,7 @@ server <- function(input, output) {
     })
     
     output$plot1 <- renderPlot({
+        shorten <- shorten()
         range <- get_date_range()
         df <- get_df()
         gw_df <- get_goal_date()
@@ -378,7 +384,7 @@ server <- function(input, output) {
             ) + 
             geom_smooth(
                 aes(x = date, y = weight, color = "Linear Model"),
-                data = bind_rows(spl, gw_df),
+                data = bind_rows(spl, gw_df) |> shorten(extra = 1),
                 method = "lm",
                 linetype = 2,
                 linewidth = 1,
@@ -401,7 +407,7 @@ server <- function(input, output) {
             p <- p +
                 geom_smooth(
                     aes(x = date, y = weight, color = "Linear Model"),
-                    data = spl,
+                    data = spl |> shorten(),
                     method = "lm",
                     linetype = 2,
                     linewidth = 1,
@@ -434,6 +440,16 @@ server <- function(input, output) {
         }
         
         return(p)
+    })
+    
+    shorten <- reactive({
+        function(df, extra = 0) {
+            if (input$model30) {
+                return(tail(df, n = 30 + extra))
+            } else {
+                return(df)
+            }
+        }
     })
     
     get_goal_date <- reactive({
