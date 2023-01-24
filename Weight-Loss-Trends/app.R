@@ -19,18 +19,93 @@ ui <- dashboardPage(
     ),
     dashboardSidebar(
         useShinyjs(),
-        a(
-            p(
-                "Github Link",
-                style = "
-                    font-size: 1em;
-                    margin: 10px
-                "
+        fluidRow(
+            style = "margin: 3px",
+            actionBttn(
+                "test",
+                label = "View on Github",
+                onclick ="window.open('https://github.com/cluffa/MyShinyDashboards', '_blank')",
+                style = "simple",
+                color = "warning"
             ),
-            href = "https://github.com/cluffa/MyShinyDashboards",
-            
+            radioButtons(
+                "drType",
+                label = "Date Range Type:",
+                choices = c(
+                    "Preset",
+                    "Range Input",
+                    "Date Range Selector",
+                    "Date Range Slider"
+                ),
+                selected = "Preset",
+                inline = TRUE
+            ),
+            numericInput(
+                "drNum",
+                label = "Date Range:",
+                value = 3,
+                width = "100px"
+            ),
+            radioButtons(
+                "drUnit",
+                label = NULL,
+                choices = c(
+                    "Days",
+                    "Weeks",
+                    "Months",
+                    "Years"
+                ),
+                selected = "Months",
+                inline = TRUE
+            ),
+            radioButtons(
+                "drSimple",
+                label = "Date Range:",
+                choices = c(
+                    `30 Days` = Sys.Date() - 30,
+                    `90 Days` = Sys.Date() - 90,
+                    `1 Year` = Sys.Date() - 365,
+                    `2 Years` = Sys.Date() - 365*2,
+                    `3 Years` = Sys.Date() - 365*3,
+                    `All Time` = Sys.Date() - 99999
+                ),
+                selected = c(`90 Days` = Sys.Date() - 90),
+                inline = TRUE
+            ),
+            dateRangeInput(
+                "drSelector",
+                label = "Date Range:",
+                start = Sys.Date() - 90,
+                end = Sys.Date()
+            ),
+            sliderInput(
+                "drSlider",
+                "Dates:",
+                min = as.Date("2021-01-01","%Y-%m-%d"),
+                max = Sys.Date(),
+                value = c(Sys.Date() - 90 ,Sys.Date()),
+                timeFormat="%Y-%m-%d"
+            ),
+            sliderInput(
+                "smoothing",
+                label = "Spline Smoothing:",
+                min = 0,
+                max = 1,
+                step = 0.05,
+                value = 0.5,
+            ),
+            awesomeCheckbox(
+                "showGoal",
+                label = "Show Projected Goal on Body Weight Plot",
+                status = "primary"
+            ),
+            awesomeCheckbox(
+                "showMM",
+                label = "Show Min/Max Weights",
+                status = "primary"
+            ),
         ),
-        collapsed = TRUE
+        collapsed = FALSE
     ),
     dashboardBody(
         fluidRow(
@@ -51,85 +126,6 @@ ui <- dashboardPage(
             tabBox(
                 id = "tabs",
                 height = "580px",
-                tabPanel(
-                    title = "Options",
-                    radioButtons(
-                        "drType",
-                        label = "Date Range Type:",
-                        choices = c(
-                            "Preset",
-                            "Range Input",
-                            "Date Range Selector",
-                            "Date Range Slider"
-                        ),
-                        selected = "Preset",
-                        inline = TRUE
-                    ),
-                    numericInput(
-                        "drNum",
-                        label = "Date Range:",
-                        value = 3,
-                        width = "100px"
-                    ),
-                    radioButtons(
-                        "drUnit",
-                        label = NULL,
-                        choices = c(
-                            "Days",
-                            "Weeks",
-                            "Months",
-                            "Years"
-                        ),
-                        selected = "Months",
-                        inline = TRUE
-                    ),
-                    radioButtons(
-                        "drSimple",
-                        label = "Date Range:",
-                        choices = c(
-                            `30 Days` = Sys.Date() - 30,
-                            `90 Days` = Sys.Date() - 90,
-                            `1 Year` = Sys.Date() - 365,
-                            `2 Years` = Sys.Date() - 365*2,
-                            `3 Years` = Sys.Date() - 365*3,
-                            `All Time` = Sys.Date() - 99999
-                        ),
-                        selected = c(`90 Days` = Sys.Date() - 90),
-                        inline = TRUE
-                    ),
-                    dateRangeInput(
-                        "drSelector",
-                        label = "Date Range:",
-                        start = Sys.Date() - 90,
-                        end = Sys.Date()
-                    ),
-                    sliderInput(
-                        "drSlider",
-                        "Dates:",
-                        min = as.Date("2021-01-01","%Y-%m-%d"),
-                        max = Sys.Date(),
-                        value = c(Sys.Date() - 90 ,Sys.Date()),
-                        timeFormat="%Y-%m-%d"
-                    ),
-                    sliderInput(
-                        "smoothing",
-                        label = "Spline Smoothing:",
-                        min = 0,
-                        max = 1,
-                        step = 0.05,
-                        value = 0.5,
-                    ),
-                    awesomeCheckbox(
-                        "showGoal",
-                        label = "Show Projected Goal on Body Weight Plot",
-                        status = "primary"
-                    ),
-                    awesomeCheckbox(
-                        "showMM",
-                        label = "Show Min/Max Weights",
-                        status = "primary"
-                    ),
-                ),
                 tabPanel(
                     "Stats",
                     verbatimTextOutput("stats"),
@@ -329,10 +325,7 @@ server <- function(input, output) {
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals), color = "blue") +
             theme_bw() +
-            ylab("calories") +
-            labs(
-                subtitle = "change spline smoothing to 0.65 to best reflect actual diet changes",
-            )
+            ylab("calories")
         
         return(p)
     })
