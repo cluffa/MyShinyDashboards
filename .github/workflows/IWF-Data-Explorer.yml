@@ -6,12 +6,6 @@ on:
       - main
     paths:
       - IWF-Data-Explorer/**
-  pull_request:
-    branches:
-      - main
-    paths:
-      - IWF-Data-Explorer/**
-
 
 jobs:
   Push-to-shinyapps:

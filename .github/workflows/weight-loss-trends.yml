@@ -6,11 +6,6 @@ on:
       - main
     paths:
       - Weight-Loss-Trends/**
-  pull_request:
-    branches:
-      - main
-    paths:
-      - Weight-Loss-Trends/**
 
 jobs:
   Push-to-shinyapps:
