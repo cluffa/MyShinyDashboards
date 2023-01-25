@@ -34,3 +34,11 @@ rsconnect/
 .DS_Store
 .ipynb_checkpoints
 .vscode/
+
+library/
+local/
+cellar/
+lock/
+python/
+sandbox/
+staging/
