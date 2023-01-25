@@ -1,4 +1,4 @@
-source("renv/activate.R")
+renv::init()
 library(rsconnect)
 
 DIR <- Sys.getenv("DIR")
