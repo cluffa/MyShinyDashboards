@@ -299,17 +299,6 @@ server <- function(input, output) {
         )
     })
     
-    get_where_cals_is_zero <- reactive({
-        pred <- get_spline_pred_in_range()
-        as.POSIXct(
-            uniroot.all(
-                approxfun(pred$date, pred$cals),
-                interval = range(as.numeric(pred$date))
-            ),
-            origin = "1970-1-1"
-        )
-    })
-    
     get_gw <- reactive({
         input$goalwt
     })
