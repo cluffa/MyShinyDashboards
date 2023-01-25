@@ -1,16 +1,15 @@
 # Weight Loss Trend
 library(shiny)
-
-#library(tidyverse)
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-library(readr)
-
 library(shinydashboard)
 library(reactable)
 library(shinyjs)
 library(shinyWidgets)
+
+# moved to server to speed up ui loading
+# library(dplyr)
+# library(ggplot2)
+# library(lubridate)
+# library(readr)
 
 ui <- dashboardPage(
     title = "Weight Loss Tracking Dashboard",
@@ -174,6 +173,12 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+    
+    library(dplyr)
+    library(ggplot2)
+    library(lubridate)
+    library(readr)
+    
     df <- read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
         col_names = c("date", "weight", "unit", "fat", "lean"),
