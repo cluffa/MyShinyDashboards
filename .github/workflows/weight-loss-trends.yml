@@ -13,14 +13,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-
-      - name: execute
-        run: >
-          docker run
-          -e DIR=Weight-Loss-Trends
-          -e TOKEN=${{secrets.TOKEN}}
-          -e SECRET=${{secrets.SECRET}}
-          -v "$(pwd)"/:/workdir
-          dankypants/shinypush
+      - run: sudo apt install R R-dev g++
+      - run: R -e "install.packages(renv, repos = 'http://cran.us.r-project.org')"
+      - run: R -e "renv::init()"
+      - run: R -e "renv::dependencies()"
+      - run: R -e "source('renv/activate.R'); library(rsconnect)"
 
 

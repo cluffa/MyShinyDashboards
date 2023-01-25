@@ -5,7 +5,7 @@ library(reactable)
 library(shinyjs)
 library(shinyWidgets)
 
-# moved to server to speed up ui loading
+# moved to server to speed up ui loading.
 # library(dplyr)
 # library(ggplot2)
 # library(lubridate)
