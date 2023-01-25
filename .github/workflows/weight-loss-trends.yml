@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - Weight-Loss-Trends/**
+      - .github/**
 
 jobs:
   Push-to-shinyapps:
