@@ -38,7 +38,7 @@ jobs:
           restore-keys: ${{ ste
       
       - name: Restore packages
-        run: Rscript -e "renv::restore()""
+        run: Rscript -e "renv::restore()"
 
       - run: |
           Rscript -e "

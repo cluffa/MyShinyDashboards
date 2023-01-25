@@ -38,7 +38,7 @@ jobs:
           restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
 
       - name: Restore packages
-        run: Rscript -e "renv::restore()""
+        run: Rscript -e "renv::restore()"
 
       - run: |
           Rscript -e "
