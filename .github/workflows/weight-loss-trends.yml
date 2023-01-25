@@ -13,18 +13,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt install r-base
-      - run: Rscript -e "renv::init(); renv::hydrate()"
-      - run: Rscript -e "renv::dependencies()"
-      - run: Rscript -e "library(rsconnect)"
+      - run: sudo apt install libcurl4-openssl-dev
+      - run: Rscript -e "renv::hydrate()"
+      - run: |
+          Rscript -e "
+            library(rsconnect)
+            setAccountInfo(
+                name = 'cluffa',
+                token = ${{secrets.TOKEN}},
+                secret = ${{secrets.SECRET}}
+            )
 
-  Mac-test:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v2
-      - run: brew install r-base
-      - run: Rscript -e "renv::init(); renv::hydrate()"
-      - run: Rscript -e "renv::dependencies()"
-      - run: Rscript -e "library(rsconnect)"
+            deployApp(
+                appName = 'Weight-Loss-Trends',
+                forceUpdate = TRUE,
+                launch.browser = FALSE
+            )
+          "
+
 
 
