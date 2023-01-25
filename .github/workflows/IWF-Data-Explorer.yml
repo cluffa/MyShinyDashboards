@@ -1,5 +1,8 @@
 name: Push IWF-Data-Explorer
 
+env:
+  RENV_PATHS_ROOT: ~/.local/share/renv
+
 on:
   push:
     branches:
@@ -14,7 +17,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: sudo apt install libcurl4-openssl-dev
-      - run: Rscript -e "renv::hydrate()"
+
+      - name: Cache packages
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+      
+      - name: Restore packages
+        run: Rscript -e "renv::restore()""
+
       - run: |
           Rscript -e "
             library(rsconnect)
