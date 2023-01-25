@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: sudo apt install r-base
-      - run: Rscript -e "renv::init()"
+      - run: Rscript -e "renv::init(); renv::hydrate()"
       - run: Rscript -e "renv::dependencies()"
-      - run: Rscript -e "source('renv/activate.R'); library(rsconnect)"
+      - run: Rscript -e "library(rsconnect)"
 
 
