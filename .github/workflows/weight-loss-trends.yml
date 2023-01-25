@@ -44,13 +44,13 @@ jobs:
           Rscript -e "
             library(rsconnect)
             setAccountInfo(
-                name = 'cluffa',
+                name = ${{secrets.USER}},
                 token = ${{secrets.TOKEN}},
                 secret = ${{secrets.SECRET}}
             )
 
             deployApp(
-                appName = 'Weight-Loss-Trends',
+                appDir = 'Weight-Loss-Trends',
                 forceUpdate = TRUE,
                 launch.browser = FALSE
             )
