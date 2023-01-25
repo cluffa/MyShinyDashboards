@@ -5,8 +5,6 @@ library(reactable)
 library(shinyjs)
 library(shinyWidgets)
 
-library(rsconnect)
-
 # moved to server to speed up ui loading
 # library(dplyr)
 # library(ggplot2)
