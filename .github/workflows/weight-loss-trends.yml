@@ -11,10 +11,18 @@ on:
 jobs:
   Push-to-shinyapps:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
       - run: sudo apt install r-base
+      - run: Rscript -e "renv::init(); renv::hydrate()"
+      - run: Rscript -e "renv::dependencies()"
+      - run: Rscript -e "library(rsconnect)"
+
+  Mac-test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: brew install r-base
       - run: Rscript -e "renv::init(); renv::hydrate()"
       - run: Rscript -e "renv::dependencies()"
       - run: Rscript -e "library(rsconnect)"
