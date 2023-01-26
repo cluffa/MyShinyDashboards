@@ -6,39 +6,28 @@ on:
       - main
     paths:
       - Weight-Loss-Trends/**
-      - .github/**
+      - .github/workflows**
 
 jobs:
   Push-to-shinyapps:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt install libcurl4-openssl-dev
-
-      - name: Set RENV_PATHS_ROOT
-        shell: bash
-        run: |
-          echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
-      - name: Install and activate renv
-        run: |
-          install.packages("renv")
-          renv::activate()
-        shell: Rscript {0}
-      - name: Get R and OS version
-        id: get-version
-        run: |
-          cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
-          cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
-        shell: Rscript {0}
-      - name: Restore Renv package cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ env.RENV_PATHS_ROOT }}
-          key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
-          restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
-
-      - name: Restore packages
-        run: Rscript -e "renv::restore()"
+      - run: sudo apt install --no-install-recommends software-properties-common dirmngr
+      - run: sudo add-apt-repository -y ppa:c2d4u.team/c2d4u4.0+
+      - run: sudo apt install -y --no-install-recommends \
+        r-base \
+        r-cran-rsconnect \
+        r-cran-dplyr \
+        r-cran-tidyr \
+        r-cran-ggplot2 \
+        r-cran-lubridate \
+        r-cran-readr \
+        r-cran-reactable \
+        r-cran-shiny \
+        r-cran-shinydashboard \
+        r-cran-shinyjs \
+        r-cran-shinywidgets
 
       - run: |
           Rscript -e "
