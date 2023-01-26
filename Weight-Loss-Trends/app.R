@@ -469,9 +469,9 @@ server <- function(input, output) {
         spl <- get_spline_pred_in_range()
         gw <- get_gw()
         
-        dif = tail(spl$weight, n = 1) - spl$weight[1] 
-        
-        cals = (dif * 3500) / nrow(spl)
+
+  
+        cals <- (coef * 3500)
         
         gwdate <- (gw - model$coefficients[1])/model$coefficients[2]
         gwdate <- as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1"))
