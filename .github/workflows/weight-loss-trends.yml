@@ -10,10 +10,9 @@ on:
 
 jobs:
   Push-to-shinyapps:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt install r-cran-tidyverse
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           cache-version: 1
