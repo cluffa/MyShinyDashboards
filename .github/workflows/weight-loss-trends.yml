@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: apt install r-cran-tidyverse
+      - run: sudo apt install r-cran-tidyverse
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           cache-version: 1
