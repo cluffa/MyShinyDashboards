@@ -7,7 +7,7 @@ Description: my shiny dashboards.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:
-    base64enc,
+    base64enc (>= 0.1-4),
     dplyr,
     tidyr,
     ggplot2,
