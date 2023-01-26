@@ -1,14 +1,13 @@
-Package: mypackage
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Package: MyShinyDashboards
+Title: my shiny dashboards
+Version: 2023.1.25
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Alex", "Cluff", , "alexcluff16@gmail.com")
+Description: my shiny dashboards.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Imports:
+    base64enc,
     dplyr,
     tidyr,
     ggplot2,
