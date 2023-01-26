@@ -15,24 +15,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          cache: false
-          cache-version: 1
+          cache-version: 2
 
-      - run: |
-          Rscript -e "
-            library(rsconnect)
-            setAccountInfo(
-                name = ${{secrets.USER}},
-                token = ${{secrets.TOKEN}},
-                secret = ${{secrets.SECRET}}
-            )
-
-            deployApp(
-                appDir = 'Weight-Loss-Trends',
-                forceUpdate = TRUE,
-                launch.browser = FALSE
-            )
-          "
+      - run: Rscript -e "library(rsconnect); setAccountInfo( ${{ secrets.USER }}, ${{ secrets.TOKEN }}, ${{ secrets.SECRET }}); deployApp(appDir = 'Weight-Loss-Trends', forceUpdate = TRUE, launch.browser = FALSE)"
 
 
 
