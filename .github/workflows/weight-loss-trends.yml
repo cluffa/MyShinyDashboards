@@ -9,7 +9,7 @@ on:
 
 
 jobs:
-  Push-to-shinyapps:
+  Deploy:
     runs-on: ubuntu-latest
 
     steps:
