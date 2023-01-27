@@ -10,10 +10,9 @@ packages <- c(
     "readr",
 
     "shinydashboard",
-    "Cairo",
     "shinyjs",
     "shinyWidgets"
 )
 
-install.packages(packages, repos = "http://cran.us.r-project.org")
+install.packages(packages, repos = "https://packagemanager.posit.co/cran")
 lapply(packages, library, character.only = TRUE)
