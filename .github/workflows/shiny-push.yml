@@ -5,7 +5,7 @@ on:
     branches:
     - main
     paths:
-    - '.github/workflows/shiny-push/**'
+    - '.github/workflows/Dockerfile'
     - '.github/workflows/shiny-push.yml'
   schedule:
   - cron: "0 0 1 * *"
