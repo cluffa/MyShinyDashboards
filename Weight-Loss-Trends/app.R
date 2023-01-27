@@ -514,7 +514,7 @@ server <- function(input, output) {
             )
         )
     })
-    
+
     output$models <- renderPrint({
         model <- get_model()
         spl <- spl()
