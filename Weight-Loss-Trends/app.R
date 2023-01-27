@@ -75,7 +75,7 @@ ui <- dashboardPage(
             dateRangeInput(
                 "drSelector",
                 label = "Date Range:",
-                start = Sys.Date() - 90,
+                start = as.Date("2023-01-01","%Y-%m-%d"),
                 end = Sys.Date()
             ),
             sliderInput(
