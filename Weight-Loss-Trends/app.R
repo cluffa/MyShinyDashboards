@@ -327,7 +327,11 @@ server <- function(input, output) {
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals), color = "blue") +
             theme_bw() +
-            ylab("calories")
+            ylab("calories per day") +
+            scale_y_continuous(
+                sec.axis = sec_axis(~ . / 500, name = "pounds per week", breaks = seq(-4, 4, by = 1)),
+                breaks = seq(-5000, 5000, by = 500)
+            )
         
         return(p)
     })
@@ -366,6 +370,9 @@ server <- function(input, output) {
                     "Linear Model" = "red",
                     "Projected Goal Date" = "green"
                 )
+            ) +
+            scale_y_continuous(
+                breaks = seq(0, 500, by = 5)
             ) +
             theme_bw() +
             theme(
