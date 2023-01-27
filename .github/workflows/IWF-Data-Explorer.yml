@@ -2,8 +2,11 @@ name: Push IWF-Data-Explorer
 
 on:
   push:
+    branches:
+      - main
     paths:
       - IWF-Data-Explorer/**
+      - .github/workflows/**
 
 jobs:
   Deploy:

@@ -180,8 +180,6 @@ server <- function(input, output) {
         skip = 1
     ) |> arrange(
         date
-    ) |> mutate(
-        bfp = round(fat/lean * 100, 1)
     )
 
     df$date <- as.POSIXct(df$date) |> force_tz(tzone = "EST")
