@@ -14,5 +14,5 @@ packages <- c(
     "shinyWidgets"
 )
 
-install.packages(packages, repos = "https://packagemanager.posit.co/cran")
+install.packages(packages, repos = "http://cran.us.r-project.org")
 lapply(packages, library, character.only = TRUE)
