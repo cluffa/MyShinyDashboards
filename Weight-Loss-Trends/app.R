@@ -237,7 +237,7 @@ server <- function(input, output) {
                     Sys.Date()
                 ))
             )
-          
+
         } else {
             show("drSimple")
             hide("drSelector")

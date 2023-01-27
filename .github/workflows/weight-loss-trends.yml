@@ -25,6 +25,6 @@ jobs:
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/workdir
-          dankypants/shiny-push
+          ${{ secrets.DOCKER_USERNAME }}/shiny-push:latest
 
 
