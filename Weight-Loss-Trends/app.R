@@ -65,8 +65,8 @@ ui <- dashboardPage(
                     `30 Days` = Sys.Date() - 30,
                     `90 Days` = Sys.Date() - 90,
                     `1 Year` = Sys.Date() - 365,
-                    `2 Years` = Sys.Date() - 365*2,
-                    `3 Years` = Sys.Date() - 365*3,
+                    `2 Years` = Sys.Date() - 365 * 2,
+                    `3 Years` = Sys.Date() - 365 * 3,
                     `All Time` = Sys.Date() - 99999
                 ),
                 selected = c(`90 Days` = Sys.Date() - 90),
@@ -83,8 +83,8 @@ ui <- dashboardPage(
                 "Dates:",
                 min = as.Date("2021-01-01","%Y-%m-%d"),
                 max = Sys.Date(),
-                value = c(Sys.Date() - 90 ,Sys.Date()),
-                timeFormat="%Y-%m-%d"
+                value = c(Sys.Date() - 90, Sys.Date()),
+                timeFormat = "%Y-%m-%d"
             ),
             sliderInput(
                 "smoothing",
@@ -138,8 +138,7 @@ ui <- dashboardPage(
                 tabPanel(
                     "Model Stats",
                     verbatimTextOutput("models"),
-                    tags$head(tags$style("#models{font-size: 12px;}")),
-                    #style="height: 500px ;overflow-y: scroll;"
+                    tags$head(tags$style("#models{font-size: 12px;}"))
                 ),
                 tabPanel(
                     "Goal Projection",
@@ -184,9 +183,9 @@ server <- function(input, output) {
     ) |> mutate(
         bfp = round(fat/lean * 100, 1)
     )
-    
+
     df$date <- as.POSIXct(df$date) |> force_tz(tzone = "EST")
-    
+
     spl <- reactive({
         smooth.spline(df$date, df$weight, spar = input$smoothing)
     })
