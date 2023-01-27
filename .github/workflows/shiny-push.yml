@@ -30,6 +30,6 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v2
       with:
-        context: .gihub/workflows/shiny-push/
+        context: .github/workflows/shiny-push/
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/shiny-push:latest
