@@ -1,9 +1,9 @@
 name: Setup Docker
 
 on:
-  branches:
-  - "main"
   push:
+    branches:
+    - main
     paths:
     - '.github/workflows/shiny-push/**'
     - '.github/workflows/shiny-push.yml'
