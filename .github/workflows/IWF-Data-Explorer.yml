@@ -21,7 +21,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: execute
+      - name: Deploy With rsconnect
         run: >
           docker run
           -e DIR=IWF-Data-Explorer
