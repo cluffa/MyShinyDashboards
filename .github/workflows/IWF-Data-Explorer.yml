@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - IWF-Data-Explorer/**
-      - .github/workflows/**
+      - .github/workflows/iwf-data-explorer.yml
 
 jobs:
   Deploy:
@@ -29,5 +29,6 @@ jobs:
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/workdir
           ${{ secrets.DOCKER_USERNAME }}/shiny-push:latest
+          Rscript deploy.R
 
 

@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - Weight-Loss-Trends/**
-      - .github/workflows/**
+      - .github/workflows/weight-loss-trends.yml
 
 jobs:
   Deploy:
@@ -29,5 +29,6 @@ jobs:
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/workdir
           ${{ secrets.DOCKER_USERNAME }}/shiny-push:latest
+          Rscript deploy.R
 
 
