@@ -34,8 +34,7 @@ ui <- dashboardPage(
                 choices = c(
                     "Preset",
                     "Range Input",
-                    "Date Range Selector",
-                    "Date Range Slider"
+                    "Date Range Selector"
                 ),
                 selected = "Preset",
                 inline = TRUE
@@ -79,14 +78,6 @@ ui <- dashboardPage(
                 end = Sys.Date()
             ),
             sliderInput(
-                "drSlider",
-                "Dates:",
-                min = as.Date("2021-01-01","%Y-%m-%d"),
-                max = Sys.Date(),
-                value = c(Sys.Date() - 90, Sys.Date()),
-                timeFormat = "%Y-%m-%d"
-            ),
-            sliderInput(
                 "smoothing",
                 label = "Spline Smoothing:",
                 min = 0,
@@ -106,6 +97,7 @@ ui <- dashboardPage(
             ),
             awesomeCheckbox(
                 "model30",
+                value = TRUE,
                 label = "Fit Linear Model on Last 30 Days Only",
                 status = "primary"
             ),
@@ -173,6 +165,10 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+    hide("drSelector")
+    hide("drNum")
+    hide("drUnit")
+
     df <- read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
         col_names = c("date", "weight", "unit", "fat", "lean"),
@@ -180,6 +176,9 @@ server <- function(input, output) {
         skip = 1
     ) |> arrange(
         date
+    ) |> select(
+        date,
+        weight
     )
 
     df$date <- as.POSIXct(df$date) |> force_tz(tzone = "EST")
@@ -196,36 +195,21 @@ server <- function(input, output) {
     pred <- reactive({
         predict(spl(), as.numeric(rng))
     })
-    
-    hide("drSelector")
-    hide("drSlider")
-    hide("drNum")
-    hide("drUnit")
+
     get_date_range <- reactive({
         type = input$drType
         
         if(type == "Date Range Selector") {
             hide("drSimple")
             show("drSelector")
-            hide("drSlider")
             hide("drNum")
             hide("drUnit")
   
             return(as.POSIXct(input$drSelector))
 
-        } else if(type == "Date Range Slider") {
-            hide("drSimple")
-            hide("drSelector")
-            show("drSlider")
-            hide("drNum")
-            hide("drUnit")
-  
-            return(as.POSIXct(input$drSlider))
-          
         } else if(type == "Range Input") {
             hide("drSimple")
             hide("drSelector")
-            hide("drSlider")
             show("drNum")
             show("drUnit")
             
@@ -239,7 +223,6 @@ server <- function(input, output) {
         } else {
             show("drSimple")
             hide("drSelector")
-            hide("drSlider")
             hide("drNum")
             hide("drUnit")
             
@@ -288,17 +271,6 @@ server <- function(input, output) {
             date = as.POSIXct(pred()$x[in_rng], origin = "1970-1-1"),
             weight = pred$y[in_rng],
             cals = cals[in_rng]
-        )
-    })
-    
-    get_where_cals_is_zero <- reactive({
-        pred <- get_spline_pred_in_range()
-        as.POSIXct(
-            uniroot.all(
-                approxfun(pred$date, pred$cals),
-                interval = range(as.numeric(pred$date))
-            ),
-            origin = "1970-1-1"
         )
     })
     
@@ -472,10 +444,7 @@ server <- function(input, output) {
         coef <- unname(model$coefficients[2])*86400
         spl <- get_spline_pred_in_range()
         gw <- get_gw()
-        
-
-  
-        cals <- (coef * 3500)
+        cals <- coef * 3500
         
         gwdate <- (gw - model$coefficients[1])/model$coefficients[2]
         gwdate <- as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1"))
@@ -488,7 +457,6 @@ server <- function(input, output) {
             paste0("(", as.character(weeks), " Weeks)"),
             "\nAvg Daily Diff From Net Calories:", round(cals, 0)
             )
-        
     })
     
     output$stats <- renderPrint({
