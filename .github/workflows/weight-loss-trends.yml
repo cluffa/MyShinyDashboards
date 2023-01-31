@@ -32,6 +32,9 @@ jobs:
           tags: sp:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          cache-to: type=local
+
+      
 
       # - uses: satackey/action-docker-layer-caching@v0.0.11
       #   continue-on-error: true
