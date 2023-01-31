@@ -27,7 +27,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          context: .github/workflows/
+          context: .
           push: false
           tags: sp:latest
           cache-from: type=gha
@@ -39,7 +39,6 @@ jobs:
       # - name: Build the Docker image
       #   run: docker build .github/workflows/ -t sp:latest
 
-    
       - name: Deploy With rsconnect
         run: >
           docker run
