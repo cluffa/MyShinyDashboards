@@ -101,6 +101,14 @@ ui <- dashboardPage(
                 label = "Fit Linear Model on Last 30 Days Only",
                 status = "primary"
             ),
+            sliderInput(
+                "fitdays",
+                label = "Adjust the Number of Days (if box checked above):",
+                min = 10,
+                max = 50,
+                step = 1,
+                value = 30,
+            ),
         ),
         collapsed = FALSE
     ),
@@ -125,23 +133,22 @@ ui <- dashboardPage(
                 height = "580px",
                 tabPanel(
                     "Stats",
+                    h3("Weight Stats"),
                     verbatimTextOutput("stats"),
+                    h3("Trends and Goal Projection"),
+                    sliderInput(
+                        "goalwt",
+                        label = "Goal Weight",
+                        min = 185,
+                        max = 250,
+                        value = 225
+                    ),
+                    verbatimTextOutput("summary"),
                 ),
                 tabPanel(
                     "Model Stats",
                     verbatimTextOutput("models"),
                     tags$head(tags$style("#models{font-size: 12px;}"))
-                ),
-                tabPanel(
-                    "Goal Projection",
-                    sliderInput(
-                        "goalwt",
-                        label = "Goal Weight",
-                        min = 185,
-                        max = 275,
-                        value = 225
-                    ),
-                    verbatimTextOutput("summary"),
                 ),
                 tabPanel(
                     "Table",
@@ -421,7 +428,7 @@ server <- function(input, output) {
     shorten <- reactive({
         function(df, extra = 0) {
             if (input$model30) {
-                return(tail(df, n = 30 + extra))
+                return(tail(df, n = input$fitdays + extra))
             } else {
                 return(df)
             }
@@ -439,10 +446,14 @@ server <- function(input, output) {
         )
     })
     
+    get_cw <- reactive({
+        spl <- get_spline_pred_in_range()
+        round(tail(spl$weight, n = 1), 1)
+    })
+    
     output$summary <- renderPrint({
         model <- get_model()
         coef <- unname(model$coefficients[2])*86400
-        spl <- get_spline_pred_in_range()
         gw <- get_gw()
         cals <- coef * 3500
         
@@ -451,7 +462,12 @@ server <- function(input, output) {
         weeks <- round((gwdate - Sys.Date()) / 7, 1)
         
         cat(
-            "Daily Trend:", coef, "lbs/day",
+            ifelse(
+                input$model30,
+                paste("Linear Model Fit on Last", input$fitdays, "days"),
+                "Linear Model Fit on Selected Date Range"
+            ),
+            "\nDaily Trend:", coef, "lbs/day",
             "\nWeekly Trend:", coef*7, "lbs/week",
             "\nGoal Projection:", as.character(gwdate), 
             paste0("(", as.character(weeks), " Weeks)"),
@@ -480,10 +496,11 @@ server <- function(input, output) {
         range <- range[2] - range[1]
         suppressWarnings(
             cat(
-                "    Range Low:", min(df$weight), "on", df$date[which.min(df$weight)],
-                "\n   Range High:", max(df$weight), "on", df$date[which.max(df$weight)],
-                "\n   Range Mean:", round(mean(df$weight, na.rm = TRUE),1),
-                "\n All Time Low:", min(full_df$weight), "on", full_df$date[which.min(full_df$weight)],
+                "Current Weight:", get_cw(), "lbs",
+                "\nRange Low:", min(df$weight), "on", df$date[which.min(df$weight)],
+                "\nRange High:", max(df$weight), "on", df$date[which.max(df$weight)],
+                "\nRange Mean:", round(mean(df$weight, na.rm = TRUE),1),
+                "\nAll Time Low:", min(full_df$weight), "on", full_df$date[which.min(full_df$weight)],
                 "\nAll Time High:", max(full_df$weight), "on", full_df$date[which.max(full_df$weight)],
                 "\nAll Time Mean:", round(mean(full_df$weight, na.rm = TRUE),1)
             )
