@@ -28,8 +28,8 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .github/workflows/
-          push: true
-          tags: shiny-push:latest
+          push: false
+          tags: shinypush
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -40,7 +40,7 @@ jobs:
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/workdir
-          shiny-push:latest
+          shinypush
           Rscript deploy.R
 
 
