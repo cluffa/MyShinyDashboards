@@ -33,3 +33,5 @@ jobs:
         context: .github/workflows/
         push: true
         tags: ${{ secrets.DOCKER_USERNAME }}/shiny-push:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
