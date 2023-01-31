@@ -7,6 +7,7 @@ on:
     paths:
       - Weight-Loss-Trends/**
       - .github/workflows/weight-loss-trends.yml
+      - Dockerfile
 
 jobs:
   Deploy:
