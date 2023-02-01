@@ -140,8 +140,9 @@ ui <- dashboardPage(
                         "goalwt",
                         label = "Goal Weight",
                         min = 185,
-                        max = 250,
-                        value = 225
+                        max = 235,
+                        value = 225,
+                        step = 5
                     ),
                     verbatimTextOutput("summary"),
                 ),
