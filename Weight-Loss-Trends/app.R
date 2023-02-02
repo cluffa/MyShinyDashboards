@@ -64,7 +64,7 @@ ui <- dashboardPage(
                     `30 Days` = Sys.Date() - 30,
                     `90 Days` = Sys.Date() - 90,
                     `1 Year` = Sys.Date() - 365,
-                    `2 Years` = Sys.Date() - 365 * 2,
+                    `2 Years` = Sys.Date() - 365 * 2
                 ),
                 selected = c(`90 Days` = Sys.Date() - 90),
                 inline = TRUE
