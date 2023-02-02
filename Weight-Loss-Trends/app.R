@@ -177,8 +177,8 @@ server <- function(input, output) {
 
     df <- read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
-        col_names = c("date", "weight", "unit", "fat", "lean"),
-        col_types = "cncnn",
+        col_names = c("date", "weight"),
+        col_types = "cn---",
         skip = 1
     ) |> arrange(
         date
