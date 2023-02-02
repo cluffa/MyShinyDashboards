@@ -194,7 +194,7 @@ server <- function(input, output) {
 
     spl <- reactive({
         smooth.spline(df$date, df$weight, spar = input$smoothing)
-    }) |> bindCache(input$smoothing)
+    }) # |> bindCache(input$smoothing)
     
     rng_start <- floor_date(df$date[1], "days")
     rng_stop <- ceiling_date(tail(df$date, 1), "days")
@@ -203,7 +203,7 @@ server <- function(input, output) {
     
     pred <- reactive({
         predict(spl(), as.numeric(rng))
-    }) |> bindCache(spl())
+    }) # |> bindCache(spl())
     
     observeEvent(input$drType, {
         type = input$drType
@@ -248,25 +248,25 @@ server <- function(input, output) {
             )
           
         }
-    }) |> bindCache(input$drType, input$drSelector, input$drNum, input$drUnit, input$drSimple)
+    }) # |> bindCache(input$drType, input$drSelector, input$drNum, input$drUnit, input$drSimple)
     
     get_df <- reactive({
         range <- get_date_range()
         df <- df_desc
         df <- df[df$date >= range[1] & df$date <= range[2] + 86400,]
         df
-    }) |> bindCache(get_date_range())
+    }) # |> bindCache(get_date_range())
     
     get_model <- reactive({
         shorten <- shorten()
         pred <- get_spline_pred_in_range() |> shorten()
         lm(weight ~ date, pred)
-    }) |> bindCache(shorten(), get_spline_pred_in_range())
+    }) # |> bindCache(shorten(), get_spline_pred_in_range())
     
     get_cals <- reactive({
         pred <- pred()
         c(diff(pred$y), NA) * 3500
-    }) |> bindCache(pred())
+    }) # |> bindCache(pred())
     
     get_spline_pred_in_range <- reactive({
         pred <- pred()
@@ -280,7 +280,7 @@ server <- function(input, output) {
             weight = pred$y[in_rng],
             cals = cals[in_rng]
         )
-    }) |> bindCache(pred(), get_date_range(), get_cals())
+    }) # |> bindCache(pred(), get_date_range(), get_cals())
     
     get_gw <- reactive({
         input$goalwt
@@ -300,7 +300,7 @@ server <- function(input, output) {
             )
         
         return(p)
-    }) |> bindCache(get_spline_pred_in_range())
+    }) # |> bindCache(get_spline_pred_in_range())
     
     get_mm <- reactive({
         df <- get_df()
@@ -308,7 +308,7 @@ server <- function(input, output) {
         mm$label <- c("max", "min")
         
         return(mm)
-    }) |> bindCache(get_df())
+    }) # |> bindCache(get_df())
     
     output$plot1 <- renderPlot({
         shorten <- shorten()
@@ -417,7 +417,7 @@ server <- function(input, output) {
         }
         
         return(p)
-    }) |> bindCache(shorten(), get_date_range(), get_df(), get_goal_date(), get_spline_pred_in_range(), get_mm(), shorten(), input$showGoal, input$showMM)
+    }) # |> bindCache(shorten(), get_date_range(), get_df(), get_goal_date(), get_spline_pred_in_range(), get_mm(), shorten(), input$showGoal, input$showMM)
     
     shorten <- reactive({
         function(df, extra = 0) {
@@ -427,7 +427,7 @@ server <- function(input, output) {
                 return(df)
             }
         }
-    }) |> bindCache(input$model30, input$fitdays)
+    }) # |> bindCache(input$model30, input$fitdays)
     
     get_goal_date <- reactive({
         gw <- get_gw()
@@ -438,12 +438,12 @@ server <- function(input, output) {
             weight = gw,
             date = as.POSIXct(gwdate, origin = "1970-1-1")
         )
-    }) |> bindCache(get_gw(), get_model())
+    }) # |> bindCache(get_gw(), get_model())
     
     get_cw <- reactive({
         spl <- get_spline_pred_in_range()
         round(tail(spl$weight, n = 1), 1)
-    }) |> bindCache(get_spline_pred_in_range())
+    }) # |> bindCache(get_spline_pred_in_range())
     
     output$summary <- renderPrint({
         model <- get_model()
@@ -467,7 +467,7 @@ server <- function(input, output) {
             paste0("(", as.character(weeks), " Weeks)"),
             "\nAvg Daily Diff From Net Calories:", round(cals, 0)
             )
-    }) |> bindCache(get_model(), get_gw(), input$model30, input$fitdays)
+    }) # |> bindCache(get_model(), get_gw(), input$model30, input$fitdays)
     
     output$stats <- renderPrint({
         df <- get_df() |> 
@@ -499,14 +499,14 @@ server <- function(input, output) {
                 "\nAll Time Mean:", round(mean(full_df$weight, na.rm = TRUE),1)
             )
         )
-    }) |> bindCache(get_df(), get_date_range(), get_cw())
+    }) # |> bindCache(get_df(), get_date_range(), get_cw())
 
     output$models <- renderPrint({
         model <- get_model()
         spl <- spl()
         print(spl)
         summary(model)
-    }) |> bindCache(get_model(), spl())
+    }) # |> bindCache(get_model(), spl())
     
     output$table <- renderReactable({
         df1 <- transmute(
