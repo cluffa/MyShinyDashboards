@@ -1,0 +1,72 @@
+{
+  "input": {
+    "drNum": 3,
+    "drSelector": [
+      "2023-01-01",
+      "2023-02-02"
+    ],
+    "drSimple": "2022-11-04",
+    "drType": "Preset",
+    "drUnit": "Months",
+    "fitdays": 39,
+    "goalwt": 225,
+    "model30": true,
+    "showGoal": true,
+    "showMM": true,
+    "sidebarCollapsed": false,
+    "sidebarItemExpanded": null,
+    "smoothing": 0.2,
+    "tabs": "Stats",
+    "test": 0
+  },
+  "output": {
+    "plot1": {
+      "src": "[image data hash: 241a17d750002f0b285f204ada2e47df]",
+      "width": 404.5,
+      "height": 500,
+      "alt": "Plot object",
+      "coordmap": {
+        "panels": [
+          {
+            "panel": 1,
+            "row": 1,
+            "col": 1,
+            "panel_vars": {
+
+            },
+            "log": {
+              "x": null,
+              "y": null
+            },
+            "domain": {
+              "left": 1667064061.2424,
+              "right": 1677490713.90963,
+              "bottom": 222.645,
+              "top": 252.455
+            },
+            "mapping": {
+              "x": "date",
+              "y": "weight",
+              "colour": "\"Observed Weight\""
+            },
+            "range": {
+              "left": 38.0220724131963,
+              "right": 399.020547945206,
+              "bottom": 468.509178173071,
+              "top": 5.47945205479452
+            }
+          }
+        ],
+        "dims": {
+          "width": 404.5,
+          "height": 500
+        }
+      }
+    },
+    "stats": "Current Weight: 232.9 lbs \nRange Low: 231.9 on 2023-02-01 \nRange High: 251.1 on 2023-01-02 \nRange Mean: 243 \nAll Time Low: 231.9 on 2023-02-01 \nAll Time High: 310 on 2016-02-27 \nAll Time Mean: 263.6",
+    "summary": "Linear Model Fit on Last 39 days \nDaily Trend: -0.4215656 lbs/day \nWeekly Trend: -2.950959 lbs/week \nGoal Projection: 2023-02-21 (2.7 Weeks) \nAvg Daily Diff From Net Calories: -1475"
+  },
+  "export": {
+
+  }
+}
