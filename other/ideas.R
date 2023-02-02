@@ -128,3 +128,22 @@ aa <- auto.arima(ts); aa
 predict(aa, n.ahead = 30)
 
 forecast(ts, h = 20) |> autoplot()
+
+
+
+library(tidyverse)
+
+df <- readr::read_csv(
+    "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
+    skip = 1,
+    col_names = c("date", "budget", "food", "exercise", "net", "difference", "weight", "weighed"),
+    col_types = "cncnn",
+)
+
+
+
+
+
+
+
+
