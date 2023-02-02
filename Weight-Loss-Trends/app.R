@@ -171,6 +171,7 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+    start.time <- Sys.time()
     hide("drSelector")
     hide("drNum")
     hide("drUnit")
@@ -188,10 +189,12 @@ server <- function(input, output) {
     )
 
     df$date <- as.POSIXct(df$date) |> force_tz(tzone = "EST")
+    
+    df_desc <- arrange(df, desc(date))
 
     spl <- reactive({
         smooth.spline(df$date, df$weight, spar = input$smoothing)
-    })
+    }) |> bindCache(input$smoothing)
     
     rng_start <- floor_date(df$date[1], "days")
     rng_stop <- ceiling_date(tail(df$date, 1), "days")
@@ -200,25 +203,35 @@ server <- function(input, output) {
     
     pred <- reactive({
         predict(spl(), as.numeric(rng))
+    }) |> bindCache(spl())
+    
+    observeEvent(input$drType, {
+        type = input$drType
+        if(type == "Date Range Selector") {
+            hide("drSimple")
+            show("drSelector")
+            hide("drNum")
+            hide("drUnit")
+        } else if(type == "Range Input") {
+            hide("drSimple")
+            hide("drSelector")
+            show("drNum")
+            show("drUnit")
+        } else {
+            show("drSimple")
+            hide("drSelector")
+            hide("drNum")
+            hide("drUnit")
+        }
     })
 
     get_date_range <- reactive({
         type = input$drType
         
         if(type == "Date Range Selector") {
-            hide("drSimple")
-            show("drSelector")
-            hide("drNum")
-            hide("drUnit")
-  
             return(as.POSIXct(input$drSelector))
 
         } else if(type == "Range Input") {
-            hide("drSimple")
-            hide("drSelector")
-            show("drNum")
-            show("drUnit")
-            
             return(
                 as.POSIXct(c(
                     Sys.Date() - period(input$drNum, tolower(input$drUnit)),
@@ -227,11 +240,6 @@ server <- function(input, output) {
             )
 
         } else {
-            show("drSimple")
-            hide("drSelector")
-            hide("drNum")
-            hide("drUnit")
-            
             return(
                 c(
                     as.POSIXct(input$drSimple),
@@ -240,31 +248,25 @@ server <- function(input, output) {
             )
           
         }
-        
-    })
-    
-    get_data <- reactive({
-        df <- arrange(df, desc(date))
-        df
-    })
+    }) |> bindCache(input$drType, input$drSelector, input$drNum, input$drUnit, input$drSimple)
     
     get_df <- reactive({
         range <- get_date_range()
-        df <- get_data()
+        df <- df_desc
         df <- df[df$date >= range[1] & df$date <= range[2] + 86400,]
         df
-    })
+    }) |> bindCache(get_date_range())
     
     get_model <- reactive({
         shorten <- shorten()
         pred <- get_spline_pred_in_range() |> shorten()
         lm(weight ~ date, pred)
-    })
+    }) |> bindCache(shorten(), get_spline_pred_in_range())
     
     get_cals <- reactive({
         pred <- pred()
         c(diff(pred$y), NA) * 3500
-    })
+    }) |> bindCache(pred())
     
     get_spline_pred_in_range <- reactive({
         pred <- pred()
@@ -274,28 +276,14 @@ server <- function(input, output) {
         in_rng <- pred$x >= range[1] & pred$x <= range[2] + 86400
         
         data.frame(
-            date = as.POSIXct(pred()$x[in_rng], origin = "1970-1-1"),
+            date = as.POSIXct(pred$x[in_rng], origin = "1970-1-1"),
             weight = pred$y[in_rng],
             cals = cals[in_rng]
         )
-    })
+    }) |> bindCache(pred(), get_date_range(), get_cals())
     
     get_gw <- reactive({
         input$goalwt
-    })
-    
-    get_daily_avg <- reactive({
-        transmute(
-                get_data(),
-                date = date(date),
-                weight = weight
-            ) |> group_by(
-                date
-            ) |> summarise(
-                weight = round(mean(weight), 1)
-            ) |> arrange(
-                desc(date)
-            )
     })
     
     output$calPlot <- renderPlot({
@@ -312,7 +300,15 @@ server <- function(input, output) {
             )
         
         return(p)
-    })
+    }) |> bindCache(get_spline_pred_in_range())
+    
+    get_mm <- reactive({
+        df <- get_df()
+        mm <- df[c(which.max(df$weight), which.min(df$weight)),]
+        mm$label <- c("max", "min")
+        
+        return(mm)
+    }) |> bindCache(get_df())
     
     output$plot1 <- renderPlot({
         shorten <- shorten()
@@ -321,8 +317,7 @@ server <- function(input, output) {
         gw_df <- get_goal_date()
         spl <- get_spline_pred_in_range()
         
-        mm <- df[c(which.max(df$weight), which.min(df$weight)),]
-        mm$label <- c("max", "min")
+        mm <- get_mm()
         
         p <- ggplot() +
             geom_point(
@@ -422,7 +417,7 @@ server <- function(input, output) {
         }
         
         return(p)
-    })
+    }) |> bindCache(shorten(), get_date_range(), get_df(), get_goal_date(), get_spline_pred_in_range(), get_mm(), shorten(), input$showGoal, input$showMM)
     
     shorten <- reactive({
         function(df, extra = 0) {
@@ -432,7 +427,7 @@ server <- function(input, output) {
                 return(df)
             }
         }
-    })
+    }) |> bindCache(input$model30, input$fitdays)
     
     get_goal_date <- reactive({
         gw <- get_gw()
@@ -443,12 +438,12 @@ server <- function(input, output) {
             weight = gw,
             date = as.POSIXct(gwdate, origin = "1970-1-1")
         )
-    })
+    }) |> bindCache(get_gw(), get_model())
     
     get_cw <- reactive({
         spl <- get_spline_pred_in_range()
         round(tail(spl$weight, n = 1), 1)
-    })
+    }) |> bindCache(get_spline_pred_in_range())
     
     output$summary <- renderPrint({
         model <- get_model()
@@ -472,14 +467,14 @@ server <- function(input, output) {
             paste0("(", as.character(weeks), " Weeks)"),
             "\nAvg Daily Diff From Net Calories:", round(cals, 0)
             )
-    })
+    }) |> bindCache(get_model(), get_gw(), input$model30, input$fitdays)
     
     output$stats <- renderPrint({
         df <- get_df() |> 
             mutate(
                 date = format(date, "%Y-%m-%d")
             )
-        full_df <- get_data() |> 
+        full_df <- df_desc |> 
             mutate(
                 date = format(date, "%Y-%m-%d")
             )
@@ -504,30 +499,45 @@ server <- function(input, output) {
                 "\nAll Time Mean:", round(mean(full_df$weight, na.rm = TRUE),1)
             )
         )
-    })
+    }) |> bindCache(get_df(), get_date_range(), get_cw())
 
     output$models <- renderPrint({
         model <- get_model()
         spl <- spl()
         print(spl)
         summary(model)
-    })
+    }) |> bindCache(get_model(), spl())
     
     output$table <- renderReactable({
-        df1 <- get_daily_avg()
-        reactable(
-            df1,
-            striped = TRUE,
-            compact = TRUE,
-            wrap = FALSE,
-            showSortable = TRUE,
-            defaultPageSize = 15,
-            showPageSizeOptions = FALSE,
-            pageSizeOptions = c(25,50,100),
-            outlined = TRUE,
-            resizable = FALSE,
-        )
+        df1 <- transmute(
+                df_desc,
+                date = date(date),
+                weight = weight
+            ) |> group_by(
+                date
+            ) |> summarise(
+                weight = round(mean(weight), 1)
+            ) |> arrange(
+                desc(date)
+            ) |>
+            reactable(
+                striped = TRUE,
+                compact = TRUE,
+                wrap = FALSE,
+                showSortable = TRUE,
+                defaultPageSize = 15,
+                showPageSizeOptions = FALSE,
+                pageSizeOptions = c(25,50,100),
+                outlined = TRUE,
+                resizable = FALSE,
+            )
     })
+    
+    end.time <- Sys.time()
+    time.taken <- end.time - start.time
+    
+    cat("time taken: ", time.taken)
+    cat(", nrows of data: ", nrow(df))
 }
 
 # Run the application 
