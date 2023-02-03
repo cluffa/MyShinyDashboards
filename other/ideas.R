@@ -131,15 +131,25 @@ forecast(ts, h = 20) |> autoplot()
 
 
 
-library(tidyverse)
+bmr <- function(weight, mult = 1.35, bfp = 0.25) {
+    kg <- weight * 0.453592
+    body_fat_mass <- bfp * kg
+    lean_body_mass <- kg - body_fat_mass
+    base_metabolic_rate <- 370 + 21.6 * lean_body_mass
+    return(base_metabolic_rate * mult)
+}
 
-df <- readr::read_csv(
-    "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
-    skip = 1,
-    col_names = c("date", "budget", "food", "exercise", "net", "difference", "weight", "weighed"),
-    col_types = "cncnn",
-)
-
+loseit <- readr::read_csv(
+        "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
+        skip = 1,
+        col_names = c("date", "budget", "food", "exercise", "net", "difference", "weight", "weighed"),
+        col_types = "c-n---n-",
+    ) |> mutate(
+        date = as_date(date, format = "%m/%d/%y"),
+        food = na_if(food, 0),
+        bmr = bmr(weight)
+    )
+    
 
 
 
