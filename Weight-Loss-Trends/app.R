@@ -128,7 +128,7 @@ ui <- dashboardPage(
                 min = 1.0,
                 max = 1.75,
                 step = 0.05,
-                value = 1.25,
+                value = 1.45,
             ),
         ),
         collapsed = FALSE
@@ -185,7 +185,16 @@ ui <- dashboardPage(
                         approximate the weight with values spread exactly 24 hours apart.
                         The linear regression line is fit using those points. The slope is then used
                         to predict when I will meet my goal weight.
-                        ")
+                        "),
+                    p(""),
+                    strong("BMR Activity Multiplier:"),
+                    p("1.2 - Inactive Desk Job"),
+                    p("1.375 - Low 1-3 days a week 1hr"),
+                    p("1.55	- Medium 3-5 days a week 1hr"),
+                    p("1.65 - Medium-high 6-7days a week 1hr"),
+                    p("1.725 - High Twice a day heavy 1hr sessions"),
+                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities")
+                    
                 )
             ),
 
@@ -214,13 +223,16 @@ server <- function(input, output) {
             weight
         )
     
-    bmr <- function(weight, mult = 1.25, bfp = 0.22) {
-        kg <- weight * 0.453592
-        body_fat_mass <- bfp * kg
-        lean_body_mass <- kg - body_fat_mass
-        base_metabolic_rate <- 370 + 21.6 * lean_body_mass
-        return(base_metabolic_rate * mult)
-    }
+    bmr_fn <- reactive({
+        function(weight, mult = input$mult, bfp = input$bfp) {
+            kg <- weight * 0.453592
+            body_fat_mass <- bfp * kg
+            lean_body_mass <- kg - body_fat_mass
+            base_metabolic_rate <- 370 + 21.6 * lean_body_mass
+            
+            return(base_metabolic_rate * mult)
+        }
+    }) |> bindCache(input$mult, input$bfp)
     
     loseit <- read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
@@ -510,6 +522,7 @@ server <- function(input, output) {
         model <- get_model()
         coef <- unname(model$coefficients[2])*86400
         gw <- get_gw()
+        bmr_fn <- bmr_fn()
         cals <- coef * 3500
         
         gwdate <- (gw - model$coefficients[1])/model$coefficients[2]
@@ -526,9 +539,10 @@ server <- function(input, output) {
             "\nWeekly Trend:", coef*7, "lbs/week",
             "\nGoal Projection:", as.character(gwdate), 
             paste0("(", as.character(weeks), " Weeks)"),
-            "\nAvg Daily Diff From Net Calories:", round(cals, 0)
+            "\nAvg Daily Diff From Net Calories:", round(cals, 0),
+            "\nEstimated Current BMR:", bmr_fn(get_cw())
             )
-    }) |> bindCache(get_model(), get_gw(), input$model30, input$fitdays)
+    }) |> bindCache(bmr_fn(), get_model(), get_gw(), input$model30, input$fitdays)
     
     output$stats <- renderPrint({
         df <- get_df() |> 
@@ -570,7 +584,7 @@ server <- function(input, output) {
     }) |> bindCache(get_model(), spl())
     
     output$table <- renderReactable({
-        df1 <- transmute(
+        transmute(
                 df_desc,
                 date = date(date),
                 weight = weight
