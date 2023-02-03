@@ -17,7 +17,7 @@ ui <- dashboardPage(
     dashboardHeader(
         title = "Weight Loss Tracking Dashboard"
     ),
-    dashboardSidebar(
+    {dashboardSidebar(
         useShinyjs(),
         tags$head(
             tags$style(HTML(".sidebar {
@@ -109,7 +109,7 @@ ui <- dashboardPage(
             sliderInput(
                 "fitdays",
                 label = "Adjust the Number of Days (if box checked above):",
-                min = 10,
+                min = 7,
                 max = 50,
                 step = 1,
                 value = 30,
@@ -119,21 +119,21 @@ ui <- dashboardPage(
                 label = "Adjust body fat percentage:",
                 min = 0.1,
                 max = 0.35,
-                step = 0.025,
+                step = 0.01,
                 value = 0.25,
             ),
             sliderInput(
                 "mult",
-                label = "Adjust bmr activity multiplier:",
+                label = "Adjust BMR activity multiplier:",
                 min = 1.0,
                 max = 1.75,
-                step = 0.05,
+                step = 0.01,
                 value = 1.45,
-            ),
+            )
         ),
         collapsed = FALSE
-    ),
-    dashboardBody(
+    )}, # sidebar
+    {dashboardBody(
         fluidRow(
             tabBox(
                 tabPanel(
@@ -154,18 +154,18 @@ ui <- dashboardPage(
                 height = "580px",
                 tabPanel(
                     "Stats",
-                    h3("Weight Stats"),
+                    h4("Weight Stats"),
                     verbatimTextOutput("stats"),
-                    h3("Trends and Goal Projection"),
+                    h4("Trends and Goal Projection"),
                     sliderInput(
                         "goalwt",
-                        label = "Goal Weight",
+                        label = "Goal Weight:",
                         min = 185,
                         max = 235,
                         value = 225,
                         step = 5
                     ),
-                    verbatimTextOutput("summary"),
+                    verbatimTextOutput("summary")
                 ),
                 tabPanel(
                     "Model Stats",
@@ -188,18 +188,22 @@ ui <- dashboardPage(
                         "),
                     p(""),
                     strong("BMR Activity Multiplier:"),
-                    p("1.2 - Inactive Desk Job"),
-                    p("1.375 - Low 1-3 days a week 1hr"),
-                    p("1.55	- Medium 3-5 days a week 1hr"),
-                    p("1.65 - Medium-high 6-7days a week 1hr"),
-                    p("1.725 - High Twice a day heavy 1hr sessions"),
-                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities")
-                    
+                    p("1.2 - Inactive Desk Job", style = "margin: 0px;"),
+                    p("1.375 - Low 1-3 days a week 1hr", style = "margin: 0px;"),
+                    p("1.55	- Medium 3-5 days a week 1hr", style = "margin: 0px;"),
+                    p("1.65 - Medium-high 6-7days a week 1hr", style = "margin: 0px;"),
+                    p("1.725 - High Twice a day heavy 1hr sessions", style = "margin: 0px;"),
+                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities", style = "margin: 0px;"),
+                    strong("BMR/TDEE Formula used:"),
+                    p("body fat mass = body fat percent * weight in kg", style = "margin: 0px;"),
+                    p("lean body mass = weight in kg - body fat mass", style = "margin: 0px;"),
+                    p("BMR = 370 + 21.6 * lean body mass", style = "margin: 0px;"),
+                    p("TDEE = BMR * activity multiplier", style = "margin: 0px;")
                 )
             ),
 
         )
-    )
+    )} # body
 )
 
 server <- function(input, output) {
@@ -208,7 +212,7 @@ server <- function(input, output) {
     hide("drNum")
     hide("drUnit")
 
-    df <- read_csv(
+    df <- {read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
             col_names = c("date", "weight"),
             col_types = "cn---",
@@ -221,20 +225,9 @@ server <- function(input, output) {
         ) |> select(
             date,
             weight
-        )
+        )}
     
-    bmr_fn <- reactive({
-        function(weight, mult = input$mult, bfp = input$bfp) {
-            kg <- weight * 0.453592
-            body_fat_mass <- bfp * kg
-            lean_body_mass <- kg - body_fat_mass
-            base_metabolic_rate <- 370 + 21.6 * lean_body_mass
-            
-            return(base_metabolic_rate * mult)
-        }
-    }) |> bindCache(input$mult, input$bfp)
-    
-    loseit <- read_csv(
+    loseit <- {read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
             skip = 1,
             col_names = c("date", "budget", "food", "exercise", "net", "difference", "weight", "weighed"),
@@ -242,7 +235,7 @@ server <- function(input, output) {
         ) |> mutate(
             date = as_datetime(date, format = "%m/%d/%y"),
             food = if_else(food < 1100, NA_real_, food)
-        )
+        )}
     
     get_loseit <- reactive({
         loseit |> mutate(
@@ -254,20 +247,16 @@ server <- function(input, output) {
             )
     }) |> bindCache(input$bfp, input$mult)
     
-    
-    
     df_desc <- arrange(df, desc(date))
 
     spl <- reactive({
         smooth.spline(df$date, df$weight, spar = input$smoothing)
     }) |> bindCache(input$smoothing)
     
-    rng_start <- floor_date(df$date[1], "days")
-    rng_stop <- ceiling_date(tail(df$date, 1), "days")
-
-    rng <- seq(rng_start, rng_stop, by = "24 hours")
-    
     pred <- reactive({
+        rng_start <- floor_date(df$date[1], "days")
+        rng_stop <- ceiling_date(tail(df$date, 1), "days")
+        rng <- seq(rng_start, rng_stop, by = "24 hours")
         predict(spl(), as.numeric(rng))
     }) |> bindCache(spl())
     
@@ -522,12 +511,28 @@ server <- function(input, output) {
         model <- get_model()
         coef <- unname(model$coefficients[2])*86400
         gw <- get_gw()
-        bmr_fn <- bmr_fn()
+        
+        if (input$model30) {
+            loseit <- get_loseit_in_range()
+            loseit <- loseit[loseit$date > (Sys.Date() - input$fitdays),]
+        } else {
+            loseit <- get_loseit_in_range()
+        }
+            
         cals <- coef * 3500
         
         gwdate <- (gw - model$coefficients[1])/model$coefficients[2]
         gwdate <- as.Date(as.POSIXct.numeric(gwdate, origin = "1970-1-1"))
         weeks <- round((gwdate - Sys.Date()) / 7, 1)
+        
+        food_mean <- mean(loseit$food)
+        bmr_mean <- mean(loseit$bmr)
+        est_act <- (food_mean - cals)/(bmr_mean/input$mult)
+        
+        observeEvent(
+            input$updatebmr,
+            {updateSliderInput(inputId = "mult", value = est_act)}
+        )
         
         cat(
             ifelse(
@@ -535,43 +540,33 @@ server <- function(input, output) {
                 paste("Linear Model Fit on Last", input$fitdays, "days"),
                 "Linear Model Fit on Selected Date Range"
             ),
-            "\nDaily Trend:", coef, "lbs/day",
-            "\nWeekly Trend:", coef*7, "lbs/week",
-            "\nGoal Projection:", as.character(gwdate), 
+            "\nDaily Trend:", coef |> round(2), "lbs/day",
+            "\nWeekly Trend:", (coef*7) |> round(2), "lbs/week",
+            "\nGoal Projection:", as.character(gwdate),
             paste0("(", as.character(weeks), " Weeks)"),
-            "\nAvg Daily Diff From Net Calories:", round(cals, 0),
-            "\nEstimated Current BMR:", bmr_fn(get_cw())
+            "\nAvg Daily Diff Based on Trend:", round(cals, 0),
+            "\nDays Not Tracked (NA Intake):", loseit$food |> is.na() |> sum(),
+            "\nAvg Daily Intake:", food_mean |> round(),
+            "\nAvg Est. TDEE (BMR*Activity):", bmr_mean |> round(),
+            "\nAvg Daily Diff Based on Intake:", mean(loseit$diff) |> round(),
+            "\nEst. BMR Activity Mult.", paste0("(",input$mult," set):"), est_act |> round(2)
             )
-    }) |> bindCache(bmr_fn(), get_model(), get_gw(), input$model30, input$fitdays)
+    }) |> bindCache(get_loseit(), get_model(), get_gw(), input$model30, input$fitdays, input$mult)
     
     output$stats <- renderPrint({
         df <- get_df() |> 
             mutate(
                 date = format(date, "%Y-%m-%d")
             )
-        full_df <- df_desc |> 
-            mutate(
-                date = format(date, "%Y-%m-%d")
-            )
-        
-        range_52 <- c(Sys.Date() - (52*7), Sys.Date() + 1)
-        df_52 <- full_df[full_df$date >= range_52[1] & full_df$date <= range_52[2],]
         
         df$date <- as.character(df$date)
-        full_df$date <- as.character(full_df$date)
-        
-        range <- get_date_range()
-        range <- as.Date(range)
-        range <- range[2] - range[1]
+    
         suppressWarnings(
             cat(
                 "Current Weight:", get_cw(), "lbs",
                 "\nRange Low:", min(df$weight), "on", df$date[which.min(df$weight)],
                 "\nRange High:", max(df$weight), "on", df$date[which.max(df$weight)],
-                "\nRange Mean:", round(mean(df$weight, na.rm = TRUE),1),
-                "\nAll Time Low:", min(full_df$weight), "on", full_df$date[which.min(full_df$weight)],
-                "\nAll Time High:", max(full_df$weight), "on", full_df$date[which.max(full_df$weight)],
-                "\nAll Time Mean:", round(mean(full_df$weight, na.rm = TRUE),1)
+                "\nRange Mean:", round(mean(df$weight, na.rm = TRUE),1)
             )
         )
     }) |> bindCache(get_df(), get_date_range(), get_cw())
