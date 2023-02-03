@@ -177,18 +177,39 @@ server <- function(input, output) {
     hide("drUnit")
 
     df <- read_csv(
-        "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
-        col_names = c("date", "weight"),
-        col_types = "cn---",
-        skip = 1
-    ) |> arrange(
-        date
-    ) |> select(
-        date,
-        weight
-    )
-
-    df$date <- as.POSIXct(df$date) |> force_tz(tzone = "EST")
+            "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
+            col_names = c("date", "weight"),
+            col_types = "cn---",
+            skip = 1,
+            lazy = TRUE
+        ) |> mutate(
+            date = as_datetime(date) |> force_tz(tzone = "EST")
+        ) |> arrange(
+            date
+        ) |> select(
+            date,
+            weight
+        )
+    
+    bmr <- function(weight, mult = 1.25, bfp = 0.22) {
+        kg <- weight * 0.453592
+        body_fat_mass <- bfp * kg
+        lean_body_mass <- kg - body_fat_mass
+        base_metabolic_rate <- 370 + 21.6 * lean_body_mass
+        return(base_metabolic_rate * mult)
+    }
+    
+    loseit <- read_csv(
+            "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
+            skip = 1,
+            col_names = c("date", "budget", "food", "exercise", "net", "difference", "weight", "weighed"),
+            col_types = "c-n---n-",
+        ) |> mutate(
+            date = as_datetime(date, format = "%m/%d/%y"),
+            food = if_else(food < 1100, NA_real_, food),
+            bmr = bmr(weight),
+            diff = food - bmr
+        )
     
     df_desc <- arrange(df, desc(date))
 
@@ -257,6 +278,11 @@ server <- function(input, output) {
         df
     }) |> bindCache(get_date_range())
     
+    get_loseit <- reactive({
+        range <- get_date_range()
+        loseit[loseit$date >= range[1] & loseit$date <= range[2] + 86400,]
+    })
+    
     get_model <- reactive({
         shorten <- shorten()
         pred <- get_spline_pred_in_range() |> shorten()
@@ -279,7 +305,7 @@ server <- function(input, output) {
             date = as.POSIXct(pred$x[in_rng], origin = "1970-1-1"),
             weight = pred$y[in_rng],
             cals = cals[in_rng]
-        )
+            )
     }) |> bindCache(pred(), get_date_range(), get_cals())
     
     get_gw <- reactive({
@@ -290,6 +316,7 @@ server <- function(input, output) {
         df <- get_spline_pred_in_range()
        
         p <- ggplot(df) +
+            geom_point(aes(date, diff), data = get_loseit(), color = "lightgray") +
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals), color = "blue") +
             theme_bw() +
@@ -300,7 +327,7 @@ server <- function(input, output) {
             )
         
         return(p)
-    }) |> bindCache(get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
+    }) |> bindCache(get_loseit(), get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
     
     get_mm <- reactive({
         df <- get_df()
@@ -535,9 +562,6 @@ server <- function(input, output) {
     
     end.time <- Sys.time()
     time.taken <- end.time - start.time
-    
-    cat("time taken: ", time.taken)
-    cat(", nrows of data: ", nrow(df))
 }
 
 # Run the application 
