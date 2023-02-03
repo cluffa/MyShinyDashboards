@@ -11,7 +11,9 @@ setAccountInfo(
 deployApp(
     appDir = DIR,
     forceUpdate = TRUE,
-    launch.browser = FALSE
+    launch.browser = FALSE,
+    appFiles = "app.R",
+    logLevel = "verbose"
 )
 
 out <- paste(DIR, "Deployed Successfully!")
