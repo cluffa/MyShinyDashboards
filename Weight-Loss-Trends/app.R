@@ -19,6 +19,13 @@ ui <- dashboardPage(
     ),
     dashboardSidebar(
         useShinyjs(),
+        tags$head(
+            tags$style(HTML(".sidebar {
+                      height: 90vh; overflow-y: auto;
+                    }"
+            ) # close HTML       
+            )            # close tags$style
+        ),             # close tags#Head
         fluidRow(
             style = "margin: 3px",
             actionBttn(
@@ -106,6 +113,22 @@ ui <- dashboardPage(
                 max = 50,
                 step = 1,
                 value = 30,
+            ),
+            sliderInput(
+                "bfp",
+                label = "Adjust body fat percentage:",
+                min = 0.1,
+                max = 0.35,
+                step = 0.025,
+                value = 0.25,
+            ),
+            sliderInput(
+                "mult",
+                label = "Adjust bmr activity multiplier:",
+                min = 1.0,
+                max = 1.75,
+                step = 0.05,
+                value = 1.25,
             ),
         ),
         collapsed = FALSE
@@ -206,10 +229,20 @@ server <- function(input, output) {
             col_types = "c-n---n-",
         ) |> mutate(
             date = as_datetime(date, format = "%m/%d/%y"),
-            food = if_else(food < 1100, NA_real_, food),
-            bmr = bmr(weight),
-            diff = food - bmr
+            food = if_else(food < 1100, NA_real_, food)
         )
+    
+    get_loseit <- reactive({
+        loseit |> mutate(
+                kg = weight * 0.453592,
+                body_fat_mass = input$bfp * kg,
+                lean_body_mass = kg - body_fat_mass,
+                bmr = (370 + 21.6 * lean_body_mass) * input$mult,
+                diff = food - bmr
+            )
+    }) |> bindCache(input$bfp, input$mult)
+    
+    
     
     df_desc <- arrange(df, desc(date))
 
@@ -278,10 +311,11 @@ server <- function(input, output) {
         df
     }) |> bindCache(get_date_range())
     
-    get_loseit <- reactive({
+    get_loseit_in_range <- reactive({
+        loseit <- get_loseit()
         range <- get_date_range()
         loseit[loseit$date >= range[1] & loseit$date <= range[2] + 86400,]
-    })
+    }) |> bindCache(get_date_range(), get_loseit())
     
     get_model <- reactive({
         shorten <- shorten()
@@ -316,7 +350,7 @@ server <- function(input, output) {
         df <- get_spline_pred_in_range()
        
         p <- ggplot(df) +
-            geom_point(aes(date, diff), data = get_loseit(), color = "lightgray") +
+            geom_point(aes(date, diff), data = get_loseit_in_range(), color = "lightgray") +
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals), color = "blue") +
             theme_bw() +
@@ -327,7 +361,7 @@ server <- function(input, output) {
             )
         
         return(p)
-    }) |> bindCache(get_loseit(), get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
+    }) |> bindCache(get_loseit_in_range(), get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
     
     get_mm <- reactive({
         df <- get_df()
