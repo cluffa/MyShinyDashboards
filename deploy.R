@@ -12,7 +12,8 @@ deployApp(
     appDir = DIR,
     forceUpdate = TRUE,
     launch.browser = FALSE,
-    appFiles = "app.R"
+    appFiles = "app.R",
+    logLevel = "verbose"
 )
 
 out <- paste(DIR, "Deployed Successfully!")
