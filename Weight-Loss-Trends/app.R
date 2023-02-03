@@ -300,7 +300,7 @@ server <- function(input, output) {
             )
         
         return(p)
-    })# |> bindCache(get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
+    }) |> bindCache(get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
     
     get_mm <- reactive({
         df <- get_df()
@@ -417,7 +417,7 @@ server <- function(input, output) {
         }
         
         return(p)
-    })# |> bindCache(shorten(), get_date_range(), get_df(), get_goal_date(), get_spline_pred_in_range(), get_mm(), shorten(), input$showGoal, input$showMM, sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
+    }) |> bindCache(shorten(), get_date_range(), get_df(), get_goal_date(), get_spline_pred_in_range(), get_mm(), shorten(), input$showGoal, input$showMM, sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
     
     shorten <- reactive({
         function(df, extra = 0) {
