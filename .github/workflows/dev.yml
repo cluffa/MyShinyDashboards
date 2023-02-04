@@ -8,10 +8,10 @@ on:
 jobs:
   Deploy:
     runs-on: ubuntu-latest
-
+    env:
+      CRAN: https://packagemanager.posit.co/cran/__linux__/jammy/latest
     steps:
       - uses: actions/checkout@v2
-
       - run: ./install2.R -n -1 rsconnect
 
 

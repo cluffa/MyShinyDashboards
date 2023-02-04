@@ -1,4 +1,4 @@
-#!/usr/bin/env r
+#!/usr/bin/env Rscript
 #
 # A second example to install one or more packages, now with option parsing
 #
