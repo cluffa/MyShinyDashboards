@@ -1,3 +1,8 @@
+#!/usr/bin/env Rscript
+
+packages <- scan("requirements.txt", character())
+
+install.packages("rsconnect")
 library(rsconnect)
 
 DIR <- Sys.getenv("DIR")
@@ -8,13 +13,13 @@ setAccountInfo(
     secret = Sys.getenv("SECRET")
 )
 
-deployApp(
-    appDir = DIR,
-    forceUpdate = TRUE,
-    launch.browser = FALSE,
-    appFiles = "app.R",
-    logLevel = "verbose"
-)
+# deployApp(
+#     appDir = DIR,
+#     forceUpdate = TRUE,
+#     launch.browser = FALSE,
+#     appFiles = "app.R",
+#     logLevel = "verbose"
+# )
 
 out <- paste(DIR, "Deployed Successfully!")
 message(out)

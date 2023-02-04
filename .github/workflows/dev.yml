@@ -9,12 +9,13 @@ jobs:
   Deploy:
     runs-on: ubuntu-latest
     env:
+      DIR: IWF-Data-Explorer/
       CRAN: https://packagemanager.posit.co/cran/__linux__/jammy/latest
+      TOKEN: ${{secrets.TOKEN}}
+      SECRET: ${{secrets.SECRET}}
     steps:
       - uses: actions/checkout@v2
       - run: sudo chmod 777 -R /usr/local/lib/R/site-library
-      - run: Rscript -e "install.packages('docopt')"
-      - run: ./install2.R -n -1 shiny tidyr dplyr lubridate ggplot2 readr rsconnect reactable shinydashboard shinyjs shinyWidgets
-      - run: Rscript -e "library('rsconnect')"
+      - run: ./deploy.R
 
 
