@@ -15,6 +15,7 @@ jobs:
       SECRET: ${{secrets.SECRET}}
     steps:
       - uses: actions/checkout@v2
+      - run: sudo apt install libcurl4-openssl-dev
       - run: sudo chmod 777 -R /usr/local/lib/R/site-library
       - run: ./deploy.R
 
