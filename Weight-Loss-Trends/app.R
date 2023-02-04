@@ -207,7 +207,6 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
-    start.time <- Sys.time()
     hide("drSelector")
     hide("drNum")
     hide("drUnit")
@@ -351,7 +350,7 @@ server <- function(input, output) {
         df <- get_spline_pred_in_range()
        
         p <- ggplot(df) +
-            geom_point(aes(date, diff), data = get_loseit_in_range(), color = "lightgray") +
+            geom_point(aes(date, diff), data = get_loseit_in_range(), color = "darkgray") +
             geom_hline(yintercept = 0, color = "red") +
             geom_line(aes(date, cals), color = "blue") +
             theme_bw() +
@@ -381,6 +380,13 @@ server <- function(input, output) {
         
         mm <- get_mm()
         
+        leg <- c(
+            "Observed Weight" = "darkgray",
+            "Spline Fit" = "blue",
+            "Linear Model" = "red",
+            "Projected Goal Date" = "green"
+        )
+        
         p <- ggplot() +
             geom_point(
                 aes(y = weight, x = date, color = "Observed Weight"),
@@ -393,18 +399,8 @@ server <- function(input, output) {
             ) +
             scale_color_manual(
                 name = NULL,
-                breaks = c(
-                    "Observed Weight",
-                    "Spline Fit",
-                    "Linear Model",
-                    "Projected Goal Date"
-                ),
-                values = c(
-                    "Observed Weight" = "darkgray",
-                    "Spline Fit" = "blue",
-                    "Linear Model" = "red",
-                    "Projected Goal Date" = "green"
-                )
+                breaks = names(leg),
+                values = leg
             ) +
             scale_y_continuous(
                 breaks = seq(0, 500, by = 5)
@@ -503,9 +499,8 @@ server <- function(input, output) {
     }) |> bindCache(get_gw(), get_model())
     
     get_cw <- reactive({
-        spl <- get_spline_pred_in_range()
-        round(tail(spl$weight, n = 1), 1)
-    })# |> bindCache(get_spline_pred_in_range())
+        round(tail(get_spline_pred_in_range()$weight, n = 1), 1)
+    }) |> bindCache(get_spline_pred_in_range())
     
     output$summary <- renderPrint({
         model <- get_model()
@@ -579,32 +574,16 @@ server <- function(input, output) {
     }) |> bindCache(get_model(), spl())
     
     output$table <- renderReactable({
-        transmute(
-                df_desc,
-                date = date(date),
-                weight = weight
-            ) |> group_by(
-                date
-            ) |> summarise(
-                weight = round(mean(weight), 1)
-            ) |> arrange(
-                desc(date)
+        get_spline_pred_in_range() |>
+            mutate(
+                date = as_date(date),
+                weight = round(weight, 1),
+                cals = round(cals)
             ) |>
             reactable(
-                striped = TRUE,
-                compact = TRUE,
-                wrap = FALSE,
-                showSortable = TRUE,
-                defaultPageSize = 15,
-                showPageSizeOptions = FALSE,
-                pageSizeOptions = c(25,50,100),
-                outlined = TRUE,
-                resizable = FALSE,
+                striped = TRUE
             )
     })
-    
-    end.time <- Sys.time()
-    time.taken <- end.time - start.time
 }
 
 # Run the application 
