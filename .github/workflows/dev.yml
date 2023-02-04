@@ -14,6 +14,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: sudo chmod 777 -R /usr/local/lib/R/site-library
       - run: Rscript -e "install.packages('docopt')"
-      - run: ./install2.R -n -1 rsconnect
+      - run: ./install2.R -n -1 shiny tidyr dplyr lubridate ggplot2 readr rsconnect reactable shinydashboard shinyjs shinyWidgets
+      - run: Rscript -e "library('rsconnect')"
 
 
