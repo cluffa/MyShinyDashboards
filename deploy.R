@@ -3,11 +3,14 @@
 packages <- scan("requirements.txt", character())
 
 library(parallel)
-install.packages(packages, Ncpus = detectCores())
+install.packages(
+    packages,
+    repos = Sys.getenv("CRAN")
+    Ncpus = detectCores(),
+    quiet = TRUE
+)
 
 library(rsconnect)
-
-DIR <- Sys.getenv("DIR")
 
 setAccountInfo(
     name = "cluffa",
@@ -16,7 +19,7 @@ setAccountInfo(
 )
 
 deployApp(
-    appDir = DIR,
+    appDir = Sys.getenv("DIR"),
     forceUpdate = TRUE,
     launch.browser = FALSE,
     appFiles = "app.R",
