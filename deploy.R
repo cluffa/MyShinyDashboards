@@ -3,7 +3,7 @@
 packages <- scan("requirements.txt", character())
 
 library(parallel)
-install.packages("rsconnect", Ncpus = detectCores())
+install.packages(packages, Ncpus = detectCores())
 
 library(rsconnect)
 
