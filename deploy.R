@@ -5,7 +5,7 @@ packages <- scan("requirements.txt", character())
 library(parallel)
 install.packages(
     packages,
-    repos = Sys.getenv("CRAN")
+    repos = "https://packagemanager.posit.co/cran/__linux__/jammy/latest",
     Ncpus = detectCores(),
     quiet = TRUE
 )

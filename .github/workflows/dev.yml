@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DIR: IWF-Data-Explorer/
-      CRAN: https://packagemanager.posit.co/cran/__linux__/jammy/latest
       TOKEN: ${{secrets.TOKEN}}
       SECRET: ${{secrets.SECRET}}
     steps:
