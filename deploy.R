@@ -3,9 +3,7 @@
 packages <- scan("requirements.txt", character())
 
 library(parallel)
-cl <- makeCluster(detectCores())
-
-parApply(cl, packages, install.packages)
+install.packages("rsconnect", Ncpus = detectCores())
 
 library(rsconnect)
 
