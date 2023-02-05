@@ -6,8 +6,7 @@ library(parallel)
 install.packages(
     packages,
     repos = "https://packagemanager.posit.co/cran/__linux__/jammy/latest",
-    Ncpus = detectCores(),
-    quiet = TRUE
+    Ncpus = detectCores()
 )
 
 library(rsconnect)
