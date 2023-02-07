@@ -25,7 +25,7 @@ jobs:
           context: .
           push: false
           load: true
-          tags: sp:latest
+          tags: shiny-push:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -36,7 +36,7 @@ jobs:
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/workdir
-          sp:latest
+          shiny-push:latest
           Rscript deploy.R
 
 

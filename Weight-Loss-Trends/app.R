@@ -207,7 +207,6 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
-    start.time <- Sys.time()
     hide("drSelector")
     hide("drNum")
     hide("drUnit")
@@ -238,27 +237,37 @@ server <- function(input, output) {
         )}
     
     get_loseit <- reactive({
-        loseit |> mutate(
+        out <- loseit |> mutate(
                 kg = weight * 0.453592,
-                body_fat_mass = input$bfp * kg,
-                lean_body_mass = kg - body_fat_mass,
-                bmr = (370 + 21.6 * lean_body_mass) * input$mult,
+                bmr = (370 + 21.6 * (kg - (input$bfp * kg))) * input$mult,
                 diff = food - bmr
             )
-    }) |> bindCache(input$bfp, input$mult)
+        
+        no_na <- remove_missing(out)
+        
+        spl <- smooth.spline(no_na$date, no_na$diff, spar = input$smoothing)
+        spl2 <- smooth.spline(out$date, if_else(is.na(out$diff), 0, out$diff), spar = input$smoothing)
+        
+        out$diff_high <- predict(spl, as.numeric(out$date))$y
+        out$diff_low <- predict(spl2, as.numeric(out$date))$y
+        
+        #out$diff_avg[is.na(out$food)] <- 0 #NA_real_
+        
+        return(out)
+    }) # |> bindCache(input$bfp, input$mult)
     
     df_desc <- arrange(df, desc(date))
 
     spl <- reactive({
         smooth.spline(df$date, df$weight, spar = input$smoothing)
-    }) |> bindCache(input$smoothing)
+    }) # |> bindCache(input$smoothing)
     
     pred <- reactive({
         rng_start <- floor_date(df$date[1], "days")
         rng_stop <- ceiling_date(tail(df$date, 1), "days")
         rng <- seq(rng_start, rng_stop, by = "24 hours")
         predict(spl(), as.numeric(rng))
-    }) |> bindCache(spl())
+    }) # |> bindCache(spl())
     
     observeEvent(input$drType, {
         type = input$drType
@@ -303,31 +312,31 @@ server <- function(input, output) {
             )
           
         }
-    }) |> bindCache(input$drType, input$drSelector, input$drNum, input$drUnit, input$drSimple)
+    }) # |> bindCache(input$drType, input$drSelector, input$drNum, input$drUnit, input$drSimple)
     
     get_df <- reactive({
         range <- get_date_range()
         df <- df_desc
         df <- df[df$date >= range[1] & df$date <= range[2] + 86400,]
         df
-    }) |> bindCache(get_date_range())
+    }) # |> bindCache(get_date_range())
     
     get_loseit_in_range <- reactive({
         loseit <- get_loseit()
         range <- get_date_range()
         loseit[loseit$date >= range[1] & loseit$date <= range[2] + 86400,]
-    }) |> bindCache(get_date_range(), get_loseit())
+    }) # |> bindCache(get_date_range(), get_loseit())
     
     get_model <- reactive({
         shorten <- shorten()
         pred <- get_spline_pred_in_range() |> shorten()
         lm(weight ~ date, pred)
-    }) |> bindCache(shorten(), get_spline_pred_in_range())
+    }) # |> bindCache(shorten(), get_spline_pred_in_range())
     
     get_cals <- reactive({
         pred <- pred()
         c(diff(pred$y), NA) * 3500
-    }) |> bindCache(pred())
+    }) # |> bindCache(pred())
     
     get_spline_pred_in_range <- reactive({
         pred <- pred()
@@ -341,7 +350,7 @@ server <- function(input, output) {
             weight = pred$y[in_rng],
             cals = cals[in_rng]
             )
-    }) |> bindCache(pred(), get_date_range(), get_cals())
+    }) # |> bindCache(pred(), get_date_range(), get_cals())
     
     get_gw <- reactive({
         input$goalwt
@@ -349,11 +358,34 @@ server <- function(input, output) {
     
     output$calPlot <- renderPlot({
         df <- get_spline_pred_in_range()
-       
+        loseit <- get_loseit_in_range()
+        
         p <- ggplot(df) +
-            geom_point(aes(date, diff), data = get_loseit_in_range(), color = "lightgray") +
-            geom_hline(yintercept = 0, color = "red") +
-            geom_line(aes(date, cals), color = "blue") +
+            geom_ribbon(
+                aes(x = date, ymin = diff_low + 100, ymax = diff_high - 100),
+                fill = "darkgray",
+                color = "transparent",
+                alpha = 0.25,
+                data = loseit,
+                ) +
+            geom_point(
+                aes(date, diff),
+                data = loseit,
+                color = "darkgray"
+                ) +
+            geom_line(
+                aes(date, (diff_high + diff_low)/2),
+                data = loseit,
+                color = "darkgray"
+                ) +
+            geom_hline(
+                yintercept = 0,
+                color = "red"
+                ) +
+            geom_line(
+                aes(date, cals),
+                color = "blue"
+                ) +
             theme_bw() +
             ylab("calories per day") +
             scale_y_continuous(
@@ -362,7 +394,7 @@ server <- function(input, output) {
             )
         
         return(p)
-    }) |> bindCache(get_loseit_in_range(), get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
+    }) # |> bindCache(get_loseit_in_range(), get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
     
     get_mm <- reactive({
         df <- get_df()
@@ -370,7 +402,7 @@ server <- function(input, output) {
         mm$label <- c("max", "min")
         
         return(mm)
-    }) |> bindCache(get_df())
+    }) # |> bindCache(get_df())
     
     output$plot1 <- renderPlot({
         shorten <- shorten()
@@ -381,46 +413,43 @@ server <- function(input, output) {
         
         mm <- get_mm()
         
+        leg <- c(
+            "Observed Weight" = "darkgray",
+            "Spline Fit" = "blue",
+            "Linear Model" = "red",
+            "Projected Goal Date" = "green"
+        )
+        
         p <- ggplot() +
             geom_point(
                 aes(y = weight, x = date, color = "Observed Weight"),
                 data = df,
-            ) +
+                ) +
             geom_line(
                 aes(date, weight, color = "Spline Fit"),
                 data = spl,
                 linewidth = 1
-            ) +
+                ) +
             scale_color_manual(
                 name = NULL,
-                breaks = c(
-                    "Observed Weight",
-                    "Spline Fit",
-                    "Linear Model",
-                    "Projected Goal Date"
-                ),
-                values = c(
-                    "Observed Weight" = "darkgray",
-                    "Spline Fit" = "blue",
-                    "Linear Model" = "red",
-                    "Projected Goal Date" = "green"
-                )
-            ) +
+                breaks = names(leg),
+                values = leg
+                ) +
             scale_y_continuous(
                 breaks = seq(0, 500, by = 5)
-            ) +
+                ) +
             theme_bw() +
             theme(
                 legend.position = c(0.18, 0.1),
                 legend.background = element_rect(fill = "transparent")
-            )
+                )
         
         if (input$showGoal) {
             p <- p + geom_point(
                 aes(y = weight, x = date, color = "Projected Goal Date"),
                 data = gw_df,
                 size = 3
-            ) + 
+                ) + 
             geom_smooth(
                 aes(x = date, y = weight, color = "Linear Model"),
                 data = bind_rows(spl, gw_df) |> shorten(extra = 1),
@@ -429,19 +458,19 @@ server <- function(input, output) {
                 linewidth = 1,
                 formula = y ~ x,
                 se = FALSE
-            ) +
+                ) +
             geom_text(
                 aes(
                     x = date,
                     y = weight,
                     label = format(date, "%Y-%m-%d"),
                     fontface = "bold"
-                ),
+                    ),
                 data = gw_df,
                 vjust = "outward",
                 hjust = "inward",
                 nudge_y = -1
-            )
+                )
         } else {
             p <- p +
                 geom_smooth(
@@ -479,7 +508,7 @@ server <- function(input, output) {
         }
         
         return(p)
-    }) |> bindCache(shorten(), get_date_range(), get_df(), get_goal_date(), get_spline_pred_in_range(), get_mm(), shorten(), input$showGoal, input$showMM, sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
+    }) # |> bindCache(shorten(), get_date_range(), get_df(), get_goal_date(), get_spline_pred_in_range(), get_mm(), shorten(), input$showGoal, input$showMM, sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
     
     shorten <- reactive({
         function(df, extra = 0) {
@@ -489,7 +518,7 @@ server <- function(input, output) {
                 return(df)
             }
         }
-    }) |> bindCache(input$model30, input$fitdays)
+    }) # |> bindCache(input$model30, input$fitdays)
     
     get_goal_date <- reactive({
         gw <- get_gw()
@@ -500,12 +529,11 @@ server <- function(input, output) {
             weight = gw,
             date = as.POSIXct(gwdate, origin = "1970-1-1")
         )
-    }) |> bindCache(get_gw(), get_model())
+    }) # |> bindCache(get_gw(), get_model())
     
     get_cw <- reactive({
-        spl <- get_spline_pred_in_range()
-        round(tail(spl$weight, n = 1), 1)
-    })# |> bindCache(get_spline_pred_in_range())
+        round(tail(get_spline_pred_in_range()$weight, n = 1), 1)
+    }) # |> bindCache(get_spline_pred_in_range())
     
     output$summary <- renderPrint({
         model <- get_model()
@@ -551,7 +579,7 @@ server <- function(input, output) {
             "\nAvg Daily Diff Based on Intake:", mean(loseit$diff) |> round(),
             "\nEst. BMR Activity Mult.", paste0("(",input$mult," set):"), est_act |> round(2)
             )
-    }) |> bindCache(get_loseit(), get_model(), get_gw(), input$model30, input$fitdays, input$mult)
+    }) # |> bindCache(get_loseit(), get_model(), get_gw(), input$model30, input$fitdays, input$mult)
     
     output$stats <- renderPrint({
         df <- get_df() |> 
@@ -569,42 +597,26 @@ server <- function(input, output) {
                 "\nRange Mean:", round(mean(df$weight, na.rm = TRUE),1)
             )
         )
-    }) |> bindCache(get_df(), get_date_range(), get_cw())
+    }) # |> bindCache(get_df(), get_date_range(), get_cw())
 
     output$models <- renderPrint({
         model <- get_model()
         spl <- spl()
         print(spl)
         summary(model)
-    }) |> bindCache(get_model(), spl())
+    }) # |> bindCache(get_model(), spl())
     
     output$table <- renderReactable({
-        transmute(
-                df_desc,
-                date = date(date),
-                weight = weight
-            ) |> group_by(
-                date
-            ) |> summarise(
-                weight = round(mean(weight), 1)
-            ) |> arrange(
-                desc(date)
+        get_spline_pred_in_range() |>
+            mutate(
+                date = as_date(date),
+                weight = round(weight, 1),
+                cals = round(cals)
             ) |>
             reactable(
-                striped = TRUE,
-                compact = TRUE,
-                wrap = FALSE,
-                showSortable = TRUE,
-                defaultPageSize = 15,
-                showPageSizeOptions = FALSE,
-                pageSizeOptions = c(25,50,100),
-                outlined = TRUE,
-                resizable = FALSE,
+                striped = TRUE
             )
     })
-    
-    end.time <- Sys.time()
-    time.taken <- end.time - start.time
 }
 
 # Run the application 

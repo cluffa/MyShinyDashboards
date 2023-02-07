@@ -1,6 +1,15 @@
-library(rsconnect)
+#!/usr/bin/env Rscript
 
-DIR <- Sys.getenv("DIR")
+packages <- scan("requirements.txt", character())
+
+library(parallel)
+install.packages(
+    packages,
+    repos = "https://packagemanager.posit.co/cran/__linux__/jammy/latest",
+    Ncpus = detectCores()
+)
+
+library(rsconnect)
 
 setAccountInfo(
     name = "cluffa",
@@ -9,12 +18,9 @@ setAccountInfo(
 )
 
 deployApp(
-    appDir = DIR,
+    appDir = Sys.getenv("DIR"),
     forceUpdate = TRUE,
     launch.browser = FALSE,
     appFiles = "app.R",
     logLevel = "verbose"
 )
-
-out <- paste(DIR, "Deployed Successfully!")
-message(out)
