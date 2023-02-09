@@ -243,15 +243,13 @@ server <- function(input, output) {
                 diff = food - bmr
             )
         
-        no_na <- remove_missing(out)
-        
-        spl <- smooth.spline(no_na$date, no_na$diff, spar = input$smoothing)
-        spl2 <- smooth.spline(out$date, if_else(is.na(out$diff), 0, out$diff), spar = input$smoothing)
-        
-        out$diff_high <- predict(spl, as.numeric(out$date))$y
-        out$diff_low <- predict(spl2, as.numeric(out$date))$y
-        
-        #out$diff_avg[is.na(out$food)] <- 0 #NA_real_
+        # no_na <- remove_missing(out)
+        # 
+        # spl <- smooth.spline(no_na$date, no_na$diff, spar = input$smoothing)
+        # spl2 <- smooth.spline(out$date, if_else(is.na(out$diff), 0, out$diff), spar = input$smoothing)
+        # 
+        # out$diff_high <- predict(spl, as.numeric(out$date))$y
+        # out$diff_low <- predict(spl2, as.numeric(out$date))$y
         
         return(out)
     }) # |> bindCache(input$bfp, input$mult)
@@ -361,23 +359,23 @@ server <- function(input, output) {
         loseit <- get_loseit_in_range()
         
         p <- ggplot(df) +
-            geom_ribbon(
-                aes(x = date, ymin = diff_low + 100, ymax = diff_high - 100),
-                fill = "darkgray",
-                color = "transparent",
-                alpha = 0.25,
-                data = loseit,
-                ) +
+            # geom_ribbon(
+            #     aes(x = date, ymin = diff_low + 100, ymax = diff_high - 100),
+            #     fill = "darkgray",
+            #     color = "transparent",
+            #     alpha = 0.25,
+            #     data = loseit,
+            #     ) +
             geom_point(
                 aes(date, diff),
                 data = loseit,
                 color = "darkgray"
                 ) +
-            geom_line(
-                aes(date, (diff_high + diff_low)/2),
-                data = loseit,
-                color = "darkgray"
-                ) +
+            # geom_line(
+            #     aes(date, (diff_high + diff_low)/2),
+            #     data = loseit,
+            #     color = "darkgray"
+            #     ) +
             geom_hline(
                 yintercept = 0,
                 color = "red"
