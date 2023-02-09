@@ -38,5 +38,3 @@ jobs:
           -v "$(pwd)"/:/workdir
           shiny-push:latest
           Rscript deploy.R
-
-
