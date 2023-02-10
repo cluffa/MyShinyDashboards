@@ -3,6 +3,7 @@
 #library(tidyverse)
 library(dplyr)
 library(tidyr)
+library(stringr)
 
 library(shiny)
 library(reactable)
