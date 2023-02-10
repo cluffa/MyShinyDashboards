@@ -14,12 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-    - name: Cache
-      id: cache-r-pack
-      uses: actions/cache@v3
-      with:
-        path: r-pack
-        key: ${{ runner.os }}-r-pack
+      - name: Cache
+        id: cache-r-pack
+        uses: actions/cache@v3
+        with:
+          path: r-pack
+          key: ${{ runner.os }}-r-pack
 
       - run: Rscript -e "print(.libPaths())"
       - run: mkdir r-pack/
