@@ -14,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
-      with:
-        cache-version: 2
-        needs: $(cat requirements.txt)
+        with:
+          cache-version: 2
+          needs: $(cat requirements.txt)
 
       # - name: Cache 1
       #   id: cache-rlib-local
