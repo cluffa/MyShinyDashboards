@@ -14,14 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Cache
+      - name: Cache 1
         id: cache-rlib-local
         uses: actions/cache@v3
         with:
           path: /usr/lib/R
           key: ${{ runner.os }}-rlib-local
 
-      - name: Cache
+      - name: Cache 2
         id: cache-rlib
         uses: actions/cache@v3
         with:
