@@ -585,7 +585,9 @@ server <- function(input, output) {
     }) # |> bindCache(get_model(), spl())
     
     output$table <- renderReactable({
-        get_spline_pred_in_range() |>
+        data_frame <- get_spline_pred_in_range()
+        
+        data_frame[nrow(data_frame):1,] |>
             mutate(
                 date = as_date(date),
                 weight = round(weight, 1),
