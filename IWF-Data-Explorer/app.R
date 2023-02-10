@@ -3,8 +3,8 @@
 #library(tidyverse)
 library(dplyr)
 library(tidyr)
-library(ggplot2)
 
+library(shiny)
 library(reactable)
 library(shinydashboard)
 
@@ -217,6 +217,8 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
+    library(ggplot2)
+    
     updateSelectizeInput(
         session, 
         "athletes", 
@@ -230,7 +232,7 @@ server <- function(input, output, session) {
         "nations", 
         choices = countries, 
         server = TRUE,
-        selected = c("USA", "CHN"),
+        selected = c("USA", "CHN", "RUS"),
         options = list(placeholder = "Search Country Code e.g. 'USA'")
     )
     
@@ -251,7 +253,7 @@ server <- function(input, output, session) {
         )
         
         output
-    })
+    }) |> bindCache(input$athletes, input$nations)
     
     datasetInputEvent <- reactive({
         events |> 
@@ -263,7 +265,7 @@ server <- function(input, output, session) {
                 if ("Olympics" %in% input$special) is_olympics == 1 else TRUE,
                 if ("Universities" %in% input$special) is_university == 1 else TRUE,
             )
-    })
+    }) |> bindCache(input$country, input$city, input$age_group, input$date_range, input$special)
     
     observeEvent(datasetInputEvent(), {
         df = datasetInputEvent() |> 
@@ -283,11 +285,11 @@ server <- function(input, output, session) {
                 input$singleEvent == event
             ) |> 
             select(-event, -event_id)
-    })
+    }) |> bindCache(input$singleEvent)
     
     output$summary <- renderPrint({
         summary(datasetInput()$athletes)
-    })
+    }) |> bindCache(input$athletes, input$nations)
     
     output$table <- renderReactable({
         reactable(
@@ -301,7 +303,7 @@ server <- function(input, output, session) {
             pageSizeOptions = c(25,50,100),
             outlined = TRUE,
             resizable = TRUE,)
-    })
+    }) |> bindCache(input$athletes, input$nations)
     
     output$tableResults <- renderReactable({
         reactable(
@@ -316,7 +318,7 @@ server <- function(input, output, session) {
             outlined = TRUE,
             resizable = TRUE,
         )
-    })
+    }) |> bindCache(input$athletes, input$nations)
     
     output$tableEventSearch <- renderReactable({
         reactable(
@@ -331,7 +333,7 @@ server <- function(input, output, session) {
             outlined = TRUE,
             resizable = TRUE,
         )
-    })
+    }) |> bindCache(input$country, input$city, input$age_group, input$date_range, input$special)
     
     output$tableEventResults <- renderReactable({
         reactable(
