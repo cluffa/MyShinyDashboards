@@ -17,7 +17,7 @@ jobs:
       - run: Rscript -e "print(.libPaths())"
       - run: mkdir r-pack/
       - run: Rscript -e "install.packages('rsconnect', lib = 'r-pack/')"
-      - run: Rscript -e "library(rsconnect)"
+      - run: Rscript -e ".libPaths('r-pack/'); library(rsconnect)"
       - run: Rscript -e "library(rsconnect, lib.loc = 'r-pack/')"
 
       # - name: Setup Buildx
