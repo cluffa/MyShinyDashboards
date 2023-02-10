@@ -2,8 +2,6 @@ name: Push IWF-Data-Explorer
 
 on:
   push:
-    branches:
-      - *
     paths:
       - IWF-Data-Explorer/**
       - .github/workflows/iwf-data-explorer.yml

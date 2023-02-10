@@ -2,8 +2,6 @@ name: Push Weight-Loss-Trends
 
 on:
   push:
-    branches:
-      - *
     paths:
       - Weight-Loss-Trends/**
       - .github/workflows/weight-loss-trends.yml
