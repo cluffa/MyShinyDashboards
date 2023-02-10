@@ -16,6 +16,8 @@ jobs:
 
       - run: Rscript -e "print(.libPaths())"
 
+      - run: Rscript -e "install.packages('rsconnect')"
+
       # - name: Setup Buildx
       #   uses: docker/setup-buildx-action@v2
       
