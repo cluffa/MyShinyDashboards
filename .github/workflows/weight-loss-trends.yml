@@ -21,9 +21,11 @@ jobs:
           path: /usr/local/lib/R/site-library
           key: ${{ runner.os }}-rlib
 
-      - run: sudo chmod +rw /usr/local/lib/R/site-library
+      - run: sudo chmod 777 -R /usr/local/lib/R/site-library
+      - run: sudo chmod 777 -R /usr/lib/R/site-library
+      - run: sudo chmod 777 -R /usr/lib/R/library
 
-      - run: Rscript -e "install.packages('rsconnect')"
+      - run: Rscript -e "install.packages('rsconnect', libs = 'https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
 
       - run: Rscript -e "library(rsconnect)"
 
