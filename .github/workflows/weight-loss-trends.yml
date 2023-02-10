@@ -14,18 +14,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup Buildx
-        uses: docker/setup-buildx-action@v2
+      - run: 
+
+      # - name: Setup Buildx
+      #   uses: docker/setup-buildx-action@v2
       
-      - name: Build
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: false
-          load: true
-          tags: shiny-push:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      # - name: Build
+      #   uses: docker/build-push-action@v4
+      #   with:
+      #     context: .
+      #     push: false
+      #     load: true
+      #     tags: shiny-push:latest
+      #     cache-from: type=gha
+      #     cache-to: type=gha,mode=max
 
       - name: Test rsconnect
         if: github.ref != 'refs/heads/main'
@@ -36,7 +38,7 @@ jobs:
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/workdir
           shiny-push:latest
-          Rscript -e "library(rsconnect)"
+          Rscript -e "library(rsconnect); print(.libPaths())"
 
       - name: Deploy With rsconnect
         if: github.ref == 'refs/heads/main'
