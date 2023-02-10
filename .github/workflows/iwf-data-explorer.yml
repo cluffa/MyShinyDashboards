@@ -3,7 +3,7 @@ name: Push IWF-Data-Explorer
 on:
   push:
     branches:
-      - main
+      - *
     paths:
       - IWF-Data-Explorer/**
       - .github/workflows/iwf-data-explorer.yml
@@ -29,7 +29,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Test rsconnect
+        if: github.ref != 'refs/heads/main'
+        run: >
+          docker run
+          -e DIR=IWF-Data-Explorer
+          -e TOKEN=${{secrets.TOKEN}}
+          -e SECRET=${{secrets.SECRET}}
+          -v "$(pwd)"/:/workdir
+          shiny-push:latest
+          Rscript -e "library(rsconnect)"
+
       - name: Deploy With rsconnect
+        if: github.ref == 'refs/heads/main'
         run: >
           docker run
           -e DIR=IWF-Data-Explorer

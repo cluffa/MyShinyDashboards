@@ -3,7 +3,7 @@ name: Push Weight-Loss-Trends
 on:
   push:
     branches:
-      - main
+      - *
     paths:
       - Weight-Loss-Trends/**
       - .github/workflows/weight-loss-trends.yml
@@ -29,7 +29,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Test rsconnect
+        if: github.ref != 'refs/heads/main'
+        run: >
+          docker run
+          -e DIR=Weight-Loss-Trends
+          -e TOKEN=${{secrets.TOKEN}}
+          -e SECRET=${{secrets.SECRET}}
+          -v "$(pwd)"/:/workdir
+          shiny-push:latest
+          Rscript -e "library(rsconnect)"
+
       - name: Deploy With rsconnect
+        if: github.ref == 'refs/heads/main'
         run: >
           docker run
           -e DIR=Weight-Loss-Trends
