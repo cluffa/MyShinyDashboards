@@ -15,15 +15,24 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Cache
+        id: cache-rlib-local
+        uses: actions/cache@v3
+        with:
+          path: /usr/lib/R
+          key: ${{ runner.os }}-rlib-local
+
+      - name: Cache
         id: cache-rlib
         uses: actions/cache@v3
         with:
-          path: /usr/local/lib/R/site-library
+          path: /usr/local/lib/R
           key: ${{ runner.os }}-rlib
+
+        
       - run: sudo apt install libcurl4-openssl-dev
-      - run: sudo chmod 777 -R /usr/local/lib/R/site-library
-      - run: sudo chmod 777 -R /usr/lib/R/site-library
-      - run: sudo chmod 777 -R /usr/lib/R/library
+
+      - run: sudo chmod 777 -R /usr/local/lib/R
+      - run: sudo chmod 777 -R /usr/lib/R
 
       - run: Rscript -e "install.packages('rsconnect', repos = 'https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
 
