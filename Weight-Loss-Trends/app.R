@@ -351,11 +351,13 @@ server <- function(input, output) {
         loseit <- get_loseit_in_range()
         
         p <- ggplot(df) +
+
             geom_point(
                 aes(date, diff),
                 data = loseit,
                 color = "darkgray"
                 ) +
+
             geom_hline(
                 yintercept = 0,
                 color = "red"
