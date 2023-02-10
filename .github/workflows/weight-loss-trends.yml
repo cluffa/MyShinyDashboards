@@ -25,7 +25,7 @@ jobs:
       - run: sudo chmod 777 -R /usr/lib/R/site-library
       - run: sudo chmod 777 -R /usr/lib/R/library
 
-      - run: Rscript -e "install.packages('rsconnect', libs = 'https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
+      - run: Rscript -e "install.packages('rsconnect', repos = 'https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
 
       - run: Rscript -e "library(rsconnect)"
 
