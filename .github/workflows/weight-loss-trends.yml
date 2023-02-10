@@ -15,17 +15,17 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Cache
-        id: cache-r-pack
+        id: cache-rlib
         uses: actions/cache@v3
         with:
-          path: r-pack
-          key: ${{ runner.os }}-r-pack
+          path: /usr/local/lib/R/site-library
+          key: ${{ runner.os }}-rlib
 
-      - run: Rscript -e "print(.libPaths())"
-      - run: mkdir r-pack/
-      - run: Rscript -e "install.packages('rsconnect', lib = 'r-pack/')"
-      #- run: Rscript -e ".libPaths('r-pack/'); library(rsconnect)"
-      - run: Rscript -e "library(rsconnect, lib.loc = 'r-pack/')"
+      - run: sudo chmod +rw /usr/local/lib/R/site-library
+
+      - run: Rscript -e "install.packages('rsconnect')"
+
+      - run: Rscript -e "library(rsconnect)"
 
       # - name: Setup Buildx
       #   uses: docker/setup-buildx-action@v2
