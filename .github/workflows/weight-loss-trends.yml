@@ -13,30 +13,34 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
+      with:
+        cache-version: 2
+        needs: $(cat requirements.txt)
 
-      - name: Cache 1
-        id: cache-rlib-local
-        uses: actions/cache@v3
-        with:
-          path: /usr/lib/R
-          key: ${{ runner.os }}-rlib-local
+      # - name: Cache 1
+      #   id: cache-rlib-local
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: /usr/lib/R
+      #     key: ${{ runner.os }}-rlib-local
 
-      - name: Cache 2
-        id: cache-rlib
-        uses: actions/cache@v3
-        with:
-          path: /usr/local/lib/R
-          key: ${{ runner.os }}-rlib
+      # - name: Cache 2
+      #   id: cache-rlib
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: /usr/local/lib/R
+      #     key: ${{ runner.os }}-rlib
 
         
-      - run: sudo apt install libcurl4-openssl-dev
+      # - run: sudo apt install libcurl4-openssl-dev
 
-      - run: sudo chmod 777 -R /usr/local/lib/R
-      - run: sudo chmod 777 -R /usr/lib/R
+      # - run: sudo chmod 777 -R /usr/local/lib/R
+      # - run: sudo chmod 777 -R /usr/lib/R
 
-      - run: Rscript -e "install.packages('rsconnect', repos = 'https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
+      # - run: Rscript -e "install.packages('rsconnect', repos = 'https://packagemanager.posit.co/cran/__linux__/jammy/latest')"
 
-      - run: Rscript -e "library(rsconnect)"
+      # - run: Rscript -e "library(rsconnect)"
 
       # - name: Setup Buildx
       #   uses: docker/setup-buildx-action@v2
