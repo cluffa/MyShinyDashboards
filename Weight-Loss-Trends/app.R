@@ -163,6 +163,18 @@ ui <- dashboardPage(
                 ),
                 tabPanel(
                     "Info",
+                    strong("BMR Activity Multiplier"),
+                    p("1.2 - Inactive Desk Job", style = "margin: 0px;"),
+                    p("1.375 - Low 1-3 days a week 1hr", style = "margin: 0px;"),
+                    p("1.55	- Medium 3-5 days a week 1hr", style = "margin: 0px;"),
+                    p("1.65 - Medium-high 6-7days a week 1hr", style = "margin: 0px;"),
+                    p("1.725 - High Twice a day heavy 1hr sessions", style = "margin: 0px;"),
+                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities", style = "top-margin: 0px;"),
+                    strong("BMR/TDEE Formula used"),
+                    p("Mifflin-St Jeor equation", a(href = "https://pubmed.ncbi.nlm.nih.gov/2305711/", "https://pubmed.ncbi.nlm.nih.gov/2305711/")),
+                    p("Men: (10 × weight in kg) + (6.25 × height in cm) - (5 × age in years) + 5"),
+                    p("Women: (10 × weight in kg) + (6.25 × height in cm) - (5 × age in years) - 161"),
+                    strong("Background"),
                     p("This dashboard was created so that I could easily track my weight over time.
                         I aim for a specific average pounds lost per week over the last 30 or 90 days.
                         With this dashboard I can easily view those trends and adjust accordingly."),
@@ -170,19 +182,7 @@ ui <- dashboardPage(
                         approximate the weight with values spread exactly 24 hours apart.
                         The linear regression line is fit using those points. The slope is then used
                         to predict when I will meet my goal weight.
-                        "),
-                    p(""),
-                    strong("BMR Activity Multiplier:"),
-                    p("1.2 - Inactive Desk Job", style = "margin: 0px;"),
-                    p("1.375 - Low 1-3 days a week 1hr", style = "margin: 0px;"),
-                    p("1.55	- Medium 3-5 days a week 1hr", style = "margin: 0px;"),
-                    p("1.65 - Medium-high 6-7days a week 1hr", style = "margin: 0px;"),
-                    p("1.725 - High Twice a day heavy 1hr sessions", style = "margin: 0px;"),
-                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities", style = "top-margin: 0px;"),
-                    strong("BMR/TDEE Formula used:"),
-                    p("Mifflin-St Jeor equation", a(href = "https://pubmed.ncbi.nlm.nih.gov/2305711/", "https://pubmed.ncbi.nlm.nih.gov/2305711/")),
-                    p("Men: (10 × weight in kg) + (6.25 × height in cm) - (5 × age in years) + 5"),
-                    p("Women: (10 × weight in kg) + (6.25 × height in cm) - (5 × age in years) - 161")
+                        ")
                 )
             ),
 
