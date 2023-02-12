@@ -1,12 +1,5 @@
 # Weight Loss Trend
 library(shiny)
-
-#library(tidyverse)
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-library(readr)
-
 library(shinydashboard)
 library(reactable)
 library(shinyjs)
@@ -115,20 +108,12 @@ ui <- dashboardPage(
                 value = 30,
             ),
             sliderInput(
-                "bfp",
-                label = "Adjust body fat percentage:",
-                min = 0.1,
-                max = 0.35,
-                step = 0.01,
-                value = 0.25,
-            ),
-            sliderInput(
                 "mult",
                 label = "Adjust BMR activity multiplier:",
                 min = 1.0,
                 max = 1.75,
                 step = 0.01,
-                value = 1.45,
+                value = 1.40,
             )
         ),
         collapsed = FALSE
@@ -178,6 +163,18 @@ ui <- dashboardPage(
                 ),
                 tabPanel(
                     "Info",
+                    strong("BMR Activity Multiplier"),
+                    p("1.2 - Inactive Desk Job", style = "margin: 0px;"),
+                    p("1.375 - Low 1-3 days a week 1hr", style = "margin: 0px;"),
+                    p("1.55	- Medium 3-5 days a week 1hr", style = "margin: 0px;"),
+                    p("1.65 - Medium-high 6-7days a week 1hr", style = "margin: 0px;"),
+                    p("1.725 - High Twice a day heavy 1hr sessions", style = "margin: 0px;"),
+                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities", style = "top-margin: 0px;"),
+                    strong("BMR/TDEE Formula used"),
+                    p("Mifflin-St Jeor equation", a(href = "https://pubmed.ncbi.nlm.nih.gov/2305711/", "https://pubmed.ncbi.nlm.nih.gov/2305711/")),
+                    p("Men: (10 × weight in kg) + (6.25 × height in cm) - (5 × age in years) + 5"),
+                    p("Women: (10 × weight in kg) + (6.25 × height in cm) - (5 × age in years) - 161"),
+                    strong("Background"),
                     p("This dashboard was created so that I could easily track my weight over time.
                         I aim for a specific average pounds lost per week over the last 30 or 90 days.
                         With this dashboard I can easily view those trends and adjust accordingly."),
@@ -185,20 +182,7 @@ ui <- dashboardPage(
                         approximate the weight with values spread exactly 24 hours apart.
                         The linear regression line is fit using those points. The slope is then used
                         to predict when I will meet my goal weight.
-                        "),
-                    p(""),
-                    strong("BMR Activity Multiplier:"),
-                    p("1.2 - Inactive Desk Job", style = "margin: 0px;"),
-                    p("1.375 - Low 1-3 days a week 1hr", style = "margin: 0px;"),
-                    p("1.55	- Medium 3-5 days a week 1hr", style = "margin: 0px;"),
-                    p("1.65 - Medium-high 6-7days a week 1hr", style = "margin: 0px;"),
-                    p("1.725 - High Twice a day heavy 1hr sessions", style = "margin: 0px;"),
-                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities", style = "margin: 0px;"),
-                    strong("BMR/TDEE Formula used:"),
-                    p("body fat mass = body fat percent * weight in kg", style = "margin: 0px;"),
-                    p("lean body mass = weight in kg - body fat mass", style = "margin: 0px;"),
-                    p("BMR = 370 + 21.6 * lean body mass", style = "margin: 0px;"),
-                    p("TDEE = BMR * activity multiplier", style = "margin: 0px;")
+                        ")
                 )
             ),
 
@@ -210,7 +194,21 @@ server <- function(input, output) {
     hide("drSelector")
     hide("drNum")
     hide("drUnit")
-
+    
+    #library(tidyverse)
+    library(dplyr)
+    library(ggplot2)
+    library(lubridate)
+    library(readr)
+    
+    KGCONST <- 0.4536 # lbs to kg
+    HEIGHT <- 188 # cm
+    AGE <- decimal_date(Sys.Date()) - decimal_date(as_date("1997-07-22"))
+    
+    mifflin <- function(weight, isMale = TRUE) {
+       (10 * weight * KGCONST) + (6.25 * HEIGHT) - (5 * AGE) + ifelse(isMale, 5, -161)
+    }
+    
     df <- {read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
             col_names = c("date", "weight"),
@@ -238,9 +236,9 @@ server <- function(input, output) {
     
     get_loseit <- reactive({
         out <- loseit |> mutate(
-                kg = weight * 0.453592,
-                bmr = (370 + 21.6 * (kg - (input$bfp * kg))) * input$mult,
-                diff = food - bmr
+                bmr = mifflin(weight),
+                tdee = bmr * input$mult,
+                diff = food - tdee
             )
         
         return(out)
@@ -534,13 +532,8 @@ server <- function(input, output) {
         weeks <- round((gwdate - Sys.Date()) / 7, 1)
         
         food_mean <- mean(loseit$food)
-        bmr_mean <- mean(loseit$bmr)
-        est_act <- (food_mean - cals)/(bmr_mean/input$mult)
-        
-        observeEvent(
-            input$updatebmr,
-            {updateSliderInput(inputId = "mult", value = est_act)}
-        )
+        tdee_mean <- mean(loseit$tdee)
+        est_act <- (food_mean - cals)/(tdee_mean/input$mult)
         
         cat(
             ifelse(
@@ -555,7 +548,7 @@ server <- function(input, output) {
             "\nAvg Daily Diff Based on Trend:", round(cals, 0),
             "\nDays Not Tracked (NA Intake):", loseit$food |> is.na() |> sum(),
             "\nAvg Daily Intake:", food_mean |> round(),
-            "\nAvg Est. TDEE (BMR*Activity):", bmr_mean |> round(),
+            "\nAvg Est. TDEE (BMR*Activity):", tdee_mean |> round(),
             "\nAvg Daily Diff Based on Intake:", mean(loseit$diff) |> round(),
             "\nEst. BMR Activity Mult.", paste0("(",input$mult," set):"), est_act |> round(2)
             )
