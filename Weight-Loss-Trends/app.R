@@ -228,7 +228,7 @@ server <- function(input, output) {
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
             skip = 1,
             col_names = c("date", "budget", "food", "exercise", "net", "difference", "weight", "weighed"),
-            col_types = "c-n---n-",
+            col_types = "c-nn--n-",
         ) |> mutate(
             date = as_datetime(date, format = "%m/%d/%y"),
             food = if_else(food < 1100, NA_real_, food)
@@ -238,8 +238,36 @@ server <- function(input, output) {
         out <- loseit |> mutate(
                 bmr = mifflin(weight),
                 tdee = bmr * input$mult,
-                diff = food - tdee
+                diff = food - tdee - exercise
             )
+        
+        week <- out |>
+            mutate(
+                weekdate = floor_date(
+                    date,
+                    unit = "1 week",
+                    week_start = getOption("lubridate.week.start", 1)
+                )
+            ) |>
+            group_by(
+                weekdate
+            ) |>
+            reframe(
+                date = date,
+                diff = mean(diff, na.rm = TRUE)
+            ) |>
+            mutate(
+                diff = if_else(
+                    is.na(out$food),
+                    NA_real_,
+                    diff
+                    )
+            ) |>
+            select(
+                diff
+            )
+        
+        out$weekdiff <- week$diff
         
         return(out)
     }) # |> bindCache(input$bfp, input$mult)
@@ -353,9 +381,14 @@ server <- function(input, output) {
             geom_point(
                 aes(date, diff),
                 data = loseit,
-                color = "darkgray"
+                color = "lightgray",
+                alpha = 0.5
                 ) +
-
+            geom_line(
+                aes(date, weekdiff),
+                data = loseit,
+                color = "darkgray"
+            ) +
             geom_hline(
                 yintercept = 0,
                 color = "red"
