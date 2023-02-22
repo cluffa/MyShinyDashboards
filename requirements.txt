@@ -1,11 +1,5 @@
+# for python 3
 shiny
-tidyr
-dplyr
-lubridate
-ggplot2
-readr
-rsconnect
-reactable
-shinydashboard
-shinyjs
-shinyWidgets
+numpy
+matplotlib
+shinylive

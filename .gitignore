@@ -39,3 +39,4 @@ bench.R
 # python
 .venv/
 __pycache__/
+weight.csv
