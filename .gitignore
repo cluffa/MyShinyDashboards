@@ -35,3 +35,7 @@ rsconnect/
 .ipynb_checkpoints
 .vscode/
 bench.R
+
+# python
+.venv/
+__pycache__/
