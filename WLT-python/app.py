@@ -135,7 +135,7 @@ def server(input, output, session):
 
         ax.grid(True, zorder=0)
 
-        fig.set_dpi(150)
+        fig.set_dpi(300)
 
         ax.scatter(
             data.dates,
