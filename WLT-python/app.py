@@ -35,39 +35,50 @@ class WeightData:
 
         if dates is None or weights is None:
             self.dates, self.weights = self._getData()
+            order = np.argsort(self.dates)
+            self.dates = self.dates[order]
+            self.weights = self.weights[order]
         else:
             self.dates = dates
             self.weights = weights
         
         self.spline = spline
 
+    def __repr__(self):
+        return f"{self.dates.size} data points from {self.dates[0]} to {self.dates[-1]}"
+    
+    def __len__(self):
+        return len(self.dates)
+
+    def __getitem__(self, index):
+        return WeightData(self.dates[index], self.weights[index], self.spline, self.url)
+
     def _getData(self):
         lines = url_open(self.url)
 
         dates = []
         weights = []
-        for line in lines:
+        for idx, line in enumerate(lines):
             date, weight = line.split(",")[0:2]
             if date == "date":
                 continue
+            elif len(dates) > 0:
+                if date == dates[-1]:
+                    if weight == weights[-1]:
+                        s = "are the same"
+                    else:
+                        s = "differ"
+
+                    print(f"Duplicate date {date} at line {idx} and {idx-1} and weights {s}, skipping line {idx}")
+                    continue
+                
             dates.append(date)
-            weights.append(float(weight))
+            weights.append(weight)
 
         return (
             np.array(dates, dtype="datetime64"),
-            np.array(weights, dtype="float"),
+            np.array(weights, dtype="float64"),
             )
-    
-    # def Spline(self, date):
-    #     if self.spline is None:
-    #         order = np.argsort(self.dates)
-    #         x = self.dates[order].astype(np.float64)
-    #         y = self.weights[order]
-    #         self.spline = UnivariateSpline(x, y)
-
-    #     ndate = date.astype(np.float64)
-    #     return self.spline(ndate)
-
 
     def filter(self, start, end = None):
         start = np.datetime64(start)
@@ -75,29 +86,28 @@ class WeightData:
             end = np.datetime64("today")
         
         inRng = (self.dates >= start) & (self.dates <= end)
-        return WeightData(self.dates[inRng], self.weights[inRng])
+        return WeightData(self.dates[inRng], self.weights[inRng], self.spline, self.url)
     
     def days(self, days):
         return self.filter(self.dates[-1] - np.timedelta64(days, 'D'))
 
     def last(self, n):
-        return WeightData(self.dates[-n:], self.weights[-n:])
+        return WeightData(self.dates[-n:], self.weights[-n:], self.spline, self.url)
 
-    def __repr__(self):
-        return f"WeightData Object\n{self.dates.size} data points from {self.dates[0]} to {self.dates[-1]}"
-    
-    def __len__(self):
-        return len(self.dates)
+    # def Spline(self):
+    #         x = self.dates.astype(np.int64)
+    #         order = np.argsort(x)
+    #         #x = np.arange(self.dates.size)
+    #         y = self.weights
 
-    def __getitem__(self, index):
-        return WeightData(self.dates[index], self.weights[index])
+    #         return UnivariateSpline(x[order], y[order], s=0)
 
 
 # %%
 
 app_ui = ui.page_fluid(
     ui.input_radio_buttons("n", "Number of days", ["7", "30", "90", "180", "365"], selected="90", inline=True),
-    ui.output_plot("plot"),
+    ui.output_plot("plot", width="90%", height="600px"),
     ui.output_text_verbatim("data"),
 )
 
