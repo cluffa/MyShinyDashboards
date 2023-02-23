@@ -2,15 +2,15 @@
 from shiny import App, render, ui
 import os, sys
 import numpy as np
-from scipy.interpolate import UnivariateSpline
+#from scipy.interpolate import UnivariateSpline
 
 # return a list of lines from a url
 # if running in pyodide, use pyodide.open_url
-def urlopen(url):
+def url_open(url):
     if "pyodide" in sys.modules:
         print("Running in pyodide, using pyodide.open_url") 
         import pyodide # type: ignore
-        return pyodide.open_url(url).readlines()
+        lines = pyodide.http.open_url(url).readlines()
     else:
         from urllib.request import urlopen
         if os.path.exists("weight.csv"):
@@ -19,13 +19,14 @@ def urlopen(url):
             lines = file.readlines()
         else:
             print("Downloading weight.csv from Google Sheets")
-            lines = urlopen(url)
+            lines = [line.decode("utf-8").strip() + "\n" for line in urlopen(url)]
             file = open('weight.csv', 'w')
             for line in lines:
                 file.write(line)
             file.close()
 
-        return urlopen(url)
+    print(f"Read {len(lines)} lines")
+    return lines
 
 class WeightData:
     def __init__(self, dates = None, weights = None, spline = None, url = None):
@@ -41,12 +42,12 @@ class WeightData:
         self.spline = spline
 
     def _getData(self):
-        lines = urlopen(self.url)
+        lines = url_open(self.url)
 
         dates = []
         weights = []
         for line in lines:
-            date, weight = line.decode("utf-8").split(",")[0:2]
+            date, weight = line.split(",")[0:2]
             if date == "date":
                 continue
             dates.append(date)
@@ -77,14 +78,7 @@ class WeightData:
         return WeightData(self.dates[inRng], self.weights[inRng])
     
     def days(self, days):
-        self.dates[-1] - np.timedelta64(days, 'D')
         return self.filter(self.dates[-1] - np.timedelta64(days, 'D'))
-
-    def weeks(self, weeks):
-        return self.days(weeks * 7)
-    
-    def months(self, months):
-        return self.days(months * 30)
 
     def last(self, n):
         return WeightData(self.dates[-n:], self.weights[-n:])
@@ -102,11 +96,9 @@ class WeightData:
 # %%
 
 app_ui = ui.page_fluid(
-    #ui.input_select("n", "Number of days", ["7", "30", "90", "180", "365"]),
-    ui.input_radio_buttons("n", "Number of days", [7, 30, 90, 180, 365], inline=True, selected=90),
+    ui.input_radio_buttons("n", "Number of days", ["7", "30", "90", "180", "365"], selected="90", inline=True),
     ui.output_plot("plot"),
     ui.output_text_verbatim("data"),
-
 )
 
 def server(input, output, session):
@@ -123,26 +115,11 @@ def server(input, output, session):
         fig, ax = plt.subplots()
 
         formats = {
-            7: (
-                "%b %d",
-                mdates.DayLocator(interval=1),
-            ),
-            30: (
-                "%b %d",
-                mdates.DayLocator(interval=7),
-            ),
-            90: (
-                "%b %d",
-                mdates.DayLocator(bymonthday=(1, 15)),
-            ),
-            180: (
-                "%b",
-                mdates.MonthLocator(interval=1),
-            ),
-            365: (
-                "%b %Y",
-                mdates.MonthLocator(interval=2),
-            ),
+            7: ("%b %d", mdates.DayLocator(interval=1)),
+            30: ("%b %d", mdates.DayLocator(interval=7)),
+            90: ("%b %d" ,mdates.DayLocator(bymonthday=(1, 15))),
+            180: ("%b", mdates.MonthLocator(interval=1)),
+            365: ("%b %Y", mdates.MonthLocator(interval=2)),
         }
 
         for maxDays in formats:
@@ -173,7 +150,6 @@ def server(input, output, session):
         # y = np.datetime64(data.Spline(x))
         # ax.plot(x, y, zorder=5, color="red")
         
-
         return fig
 
     @output
