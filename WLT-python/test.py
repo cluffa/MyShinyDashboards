@@ -36,26 +36,29 @@ def test_data():
 
 
 def test_plot(data, days):
-    from plot import with_pyplot, with_plotnine, plt
+    from plot import plt, with_plotnine, with_pyplot
 
     with suppress_stdout():
         with_pyplot(data, days)
         with_plotnine(data, days)
         plt.close("all")
 
+
 def test_pyplot(data, days):
-    from plot import with_pyplot, plt
+    from plot import plt, with_pyplot
 
     with suppress_stdout():
         with_pyplot(data, days)
         plt.close("all")
 
+
 def test_plotnine(data, days, fit=False):
-    from plot import with_plotnine, plt
+    from plot import plt, with_plotnine
 
     with suppress_stdout():
         with_plotnine(data, days, fit=fit)
         plt.close("all")
+
 
 print(f"utils force download: {timeit(lambda: test_utils(True),number=3)}")
 print(f"utils no download: {timeit(lambda: test_utils(False),number=10)}")
@@ -68,4 +71,6 @@ with suppress_stdout():
 print(f"plot: {timeit(lambda: test_plot(data, 365),number=100)}")
 print(f"pyplot: {timeit(lambda: test_pyplot(data, 365),number=100)}")
 print(f"plotnine: {timeit(lambda: test_plotnine(data, 365, fit=False),number=100)}")
-print(f"plotnine (with smoothing line): {timeit(lambda: test_plotnine(data, 365, fit=True),number=100)}")
+print(
+    f"plotnine (with smoothing line): {timeit(lambda: test_plotnine(data, 365, fit=True),number=100)}"
+)
