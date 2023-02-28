@@ -66,11 +66,12 @@ print(f"data: {timeit(lambda: test_data(),number=100)}")
 
 from data import WeightData
 
+day_count = 90
 with suppress_stdout():
     data = WeightData()
-print(f"plot: {timeit(lambda: test_plot(data, 365),number=100)}")
-print(f"pyplot: {timeit(lambda: test_pyplot(data, 365),number=100)}")
-print(f"plotnine: {timeit(lambda: test_plotnine(data, 365, fit=False),number=100)}")
+print(f"plot: {timeit(lambda: test_plot(data, day_count),number=100)}")
+print(f"pyplot: {timeit(lambda: test_pyplot(data, day_count),number=100)}")
+print(f"plotnine: {timeit(lambda: test_plotnine(data, day_count, fit=False),number=100)}")
 print(
-    f"plotnine (with smoothing line): {timeit(lambda: test_plotnine(data, 365, fit=True),number=100)}"
+    f"plotnine (with smoothing line): {timeit(lambda: test_plotnine(data, day_count, fit=True),number=100)}"
 )
