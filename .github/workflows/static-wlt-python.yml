@@ -36,6 +36,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Install Pip Requirements
         run: pip install -r requirements.txt
+      - name: Test Run
+        run: python3 WLT-python/test.py
       - name: Build With Shinylive
         run: shinylive export WLT-python WLT
       - name: Setup Pages
