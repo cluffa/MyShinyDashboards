@@ -3,3 +3,4 @@ shiny
 numpy
 matplotlib
 shinylive
+plotnine
