@@ -191,9 +191,9 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
-    hide("drSelector")
-    hide("drNum")
-    hide("drUnit")
+    shinyjs::hide("drSelector")
+    shinyjs::hide("drNum")
+    shinyjs::hide("drUnit")
     
     #library(tidyverse)
     library(dplyr)
@@ -288,22 +288,22 @@ server <- function(input, output) {
     observeEvent(input$drType, {
         type = input$drType
         if(type == "Date Range Selector") {
-            hide("drSimple")
-            show("drSelector")
-            hide("drNum")
-            hide("drUnit")
+            shinyjs::hide("drSimple")
+            shinyjs::show("drSelector")
+            shinyjs::hide("drNum")
+            shinyjs::hide("drUnit")
         } else if(type == "Range Input") {
-            hide("drSimple")
-            hide("drSelector")
-            show("drNum")
-            show("drUnit")
+            shinyjs::hide("drSimple")
+            shinyjs::hide("drSelector")
+            shinyjs::show("drNum")
+            shinyjs::show("drUnit")
         } else {
-            show("drSimple")
-            hide("drSelector")
-            hide("drNum")
-            hide("drUnit")
+            shinyjs::show("drSimple")
+            shinyjs::hide("drSelector")
+            shinyjs::hide("drNum")
+            shinyjs::hide("drUnit")
         }
-    })
+    });
 
     get_date_range <- reactive({
         type = input$drType
