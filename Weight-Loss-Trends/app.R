@@ -13,12 +13,10 @@ ui <- dashboardPage(
     {dashboardSidebar(
         useShinyjs(),
         tags$head(
-            tags$style(HTML(".sidebar {
-                      height: 90vh; overflow-y: auto;
-                    }"
-            ) # close HTML       
-            )            # close tags$style
-        ),             # close tags#Head
+            tags$style(
+                HTML(".sidebar { height: 90vh; overflow-y: auto; }")   
+            )
+        ),
         fluidRow(
             style = "margin: 3px",
             actionBttn(
@@ -113,7 +111,7 @@ ui <- dashboardPage(
                 min = 1.0,
                 max = 1.75,
                 step = 0.01,
-                value = 1.40,
+                value = 1.20,
             )
         ),
         collapsed = FALSE
@@ -191,6 +189,8 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+    library(Cairo)
+    options(shiny.usecairo=TRUE)
     shinyjs::hide("drSelector")
     shinyjs::hide("drNum")
     shinyjs::hide("drUnit")
@@ -581,7 +581,7 @@ server <- function(input, output) {
             "\nAvg Daily Diff Based on Trend:", round(cals, 0),
             "\nDays Not Tracked (NA Intake):", loseit$food |> is.na() |> sum(),
             "\nAvg Daily Intake:", food_mean |> round(),
-            "\nAvg Est. TDEE (BMR*Activity):", tdee_mean |> round(),
+            "\nAvg Est. TDEE (BMR * Activity) + Exercise:", tdee_mean |> round(),
             "\nAvg Daily Diff Based on Intake:", mean(loseit$diff) |> round(),
             "\nEst. BMR Activity Mult.", paste0("(",input$mult," set):"), est_act |> round(2)
             )
