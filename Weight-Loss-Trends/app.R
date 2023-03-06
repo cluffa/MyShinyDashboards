@@ -189,8 +189,8 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
-    library(Cairo)
-    options(shiny.usecairo=TRUE)
+    # library(Cairo)
+    # options(shiny.usecairo=TRUE)
     shinyjs::hide("drSelector")
     shinyjs::hide("drNum")
     shinyjs::hide("drUnit")
