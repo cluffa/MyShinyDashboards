@@ -4,6 +4,8 @@ import sys
 from contextlib import contextmanager
 from timeit import timeit
 
+from data import WeightData
+
 
 @contextmanager
 def suppress_stdout():
@@ -35,15 +37,6 @@ def test_data():
         data.days(30)
 
 
-def test_plot(data, days):
-    from plot import plt, with_plotnine, with_pyplot
-
-    with suppress_stdout():
-        with_pyplot(data, days)
-        with_plotnine(data, days)
-        plt.close("all")
-
-
 def test_pyplot(data, days):
     from plot import plt, with_pyplot
 
@@ -52,26 +45,11 @@ def test_pyplot(data, days):
         plt.close("all")
 
 
-def test_plotnine(data, days, fit=False):
-    from plot import plt, with_plotnine
-
-    with suppress_stdout():
-        with_plotnine(data, days, fit=fit)
-        plt.close("all")
-
-
-print(f"utils force download: {timeit(lambda: test_utils(True),number=3)}")
-print(f"utils no download: {timeit(lambda: test_utils(False),number=10)}")
-print(f"data: {timeit(lambda: test_data(),number=100)}")
-
-from data import WeightData
+print(f"utils force download: {timeit(lambda: test_utils(True), number=3)}")
+print(f"utils no download: {timeit(lambda: test_utils(False), number=3)}")
+print(f"data: {timeit(lambda: test_data(), number=10)}")
 
 day_count = 90
 with suppress_stdout():
     data = WeightData()
-print(f"plot: {timeit(lambda: test_plot(data, day_count),number=100)}")
-print(f"pyplot: {timeit(lambda: test_pyplot(data, day_count),number=100)}")
-print(f"plotnine: {timeit(lambda: test_plotnine(data, day_count, fit=False),number=100)}")
-print(
-    f"plotnine (with smoothing line): {timeit(lambda: test_plotnine(data, day_count, fit=True),number=100)}"
-)
+print(f"pyplot: {timeit(lambda: test_pyplot(data, day_count),number=10)}")

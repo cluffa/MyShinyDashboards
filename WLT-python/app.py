@@ -11,8 +11,8 @@ app_ui = ui.page_fluid(
         inline=True,
     ),
     ui.output_text_verbatim("data"),
+    ui.input_slider("smooth", "Smooth", 0, 1, 0.3, step=0.01),
     ui.output_plot("plot1", width="90%", height="600px"),
-    ui.output_plot("plot2", width="90%", height="600px"),
 )
 
 
@@ -26,12 +26,7 @@ def server(input, output, session):
     @output
     @render.plot
     def plot1():
-        weight_data.days(day_count()).plot()
-
-    @output
-    @render.plot
-    def plot2():
-        weight_data.days(day_count()).plot(with_plotnine=True)
+        weight_data.plot(days=day_count(), smooth=input.smooth())
 
     @output
     @render.text()

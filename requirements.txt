@@ -2,5 +2,5 @@
 shiny
 numpy
 matplotlib
+csaps
 shinylive
-plotnine

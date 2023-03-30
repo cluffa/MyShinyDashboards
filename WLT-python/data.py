@@ -1,5 +1,6 @@
 import numpy as np
 import plot
+from csaps import csaps
 from utils import url_open
 
 
@@ -47,7 +48,7 @@ class WeightData:
             weights.append(weight)
 
         return {
-            "date": np.array(dates, dtype="datetime64"),
+            "date": np.array(dates, dtype="datetime64[s]"),
             "weight": np.array(weights, dtype="float64"),
         }
 
@@ -64,9 +65,22 @@ class WeightData:
 
     def last(self, n):
         return WeightData({key: self.data[key][-n:] for key in self.data})
+    
+    def spline_fit(self, points_out=None, smooth=0.5):
+        x = self.data["date"]
+        y = self.data["weight"]
 
-    def plot(self, fit=True, with_plotnine=False, days=None):
-        if with_plotnine:
-            return plot.with_plotnine(self, fit=fit)
-        else:
-            return plot.with_pyplot(self, fit=fit)
+        if points_out is None:
+            points_out = len(x)
+
+        x_dtype = x.dtype
+        x = x.astype("int64")
+
+        xs = np.linspace(x[0], x[-1], points_out)
+        ys = csaps(x, y, xs, smooth=smooth, normalizedsmooth=True)
+        return xs.astype(x_dtype), ys
+
+    def plot(self, **kwargs):
+        return plot.with_pyplot(self, **kwargs)
+
+
