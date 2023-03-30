@@ -1,5 +1,6 @@
 # for shinylive only, project deps are in root dir
 shiny
 numpy
+scipy
 matplotlib
 csaps

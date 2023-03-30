@@ -1,6 +1,7 @@
 # for python 3
 shiny
 numpy
+scipy
 matplotlib
 csaps
 shinylive
