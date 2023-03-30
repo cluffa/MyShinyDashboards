@@ -8,8 +8,7 @@ IWF Results:
 [![Push IWF-Data-Explorer](https://github.com/cluffa/MyShinyDashboards/actions/workflows/iwf-data-explorer.yml/badge.svg)](https://github.com/cluffa/MyShinyDashboards/actions/workflows/iwf-data-explorer.yml)  
 https://cluffa.shinyapps.io/IWF-Data-Explorer/  
 
-In Testing:  
-Python-shiny-pyodide-wasm-on-pages  
+In Testing: Client side only dashboard using Pyodide and Python  
 [![Deploy static content to Pages](https://github.com/cluffa/MyShinyDashboards/actions/workflows/static-wlt-python.yml/badge.svg)](https://github.com/cluffa/MyShinyDashboards/actions/workflows/static-wlt-python.yml)  
-<https://cluffa.github.io/MyShinyDashboards/>  
-real time editor: <https://cluffa.github.io/MyShinyDashboards/edit>  
+dashboard only: <https://cluffa.github.io/MyShinyDashboards/>  
+editor: <https://cluffa.github.io/MyShinyDashboards/edit>  
