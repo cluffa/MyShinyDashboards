@@ -1,5 +1,6 @@
 import numpy as np
 import plot
+import scipy  # noqa: F401
 from csaps import csaps
 from utils import url_open
 
