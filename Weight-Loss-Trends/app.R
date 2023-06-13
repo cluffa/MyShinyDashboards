@@ -5,6 +5,8 @@ library(reactable)
 library(shinyjs)
 library(shinyWidgets)
 
+GOALWEIGHT <- 200
+
 ui <- dashboardPage(
     title = "Weight Loss Tracking Dashboard",
     dashboardHeader(
@@ -61,10 +63,13 @@ ui <- dashboardPage(
                 choices = c(
                     `30 Days` = Sys.Date() - 30,
                     `90 Days` = Sys.Date() - 90,
+                    `6 Months` = Sys.Date() - 180,
                     `1 Year` = Sys.Date() - 365,
-                    `2 Years` = Sys.Date() - 365 * 2
+                    `2 Years` = Sys.Date() - 730,
+                    `3 Years` = Sys.Date() - 1095
                 ),
-                selected = c(`90 Days` = Sys.Date() - 90),
+                # selected = c(`90 Days` = Sys.Date() - 90),
+                selected = c(`6 Months` = Sys.Date() - 180),
                 inline = TRUE
             ),
             dateRangeInput(
@@ -143,9 +148,9 @@ ui <- dashboardPage(
                     sliderInput(
                         "goalwt",
                         label = "Goal Weight:",
-                        min = 185,
-                        max = 235,
-                        value = 220,
+                        min = GOALWEIGHT - 25,
+                        max = GOALWEIGHT + 25,
+                        value = GOALWEIGHT,
                         step = 5
                     ),
                     verbatimTextOutput("summary")
@@ -306,7 +311,7 @@ server <- function(input, output) {
     });
 
     get_date_range <- reactive({
-        type = input$drType
+        type <- input$drType
         
         if(type == "Date Range Selector") {
             return(as.POSIXct(input$drSelector))
