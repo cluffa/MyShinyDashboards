@@ -102,12 +102,13 @@ ui <- dashboardPage(
                 label = "Fit Linear Model on Last 30 Days Only",
                 status = "primary"
             ),
-            sliderInput(
+            # sliderInput(
+            numericInput(
                 "fitdays",
                 label = "Adjust the Number of Days (if box checked above):",
-                min = 7,
-                max = 50,
-                step = 1,
+                min = 5,
+                # max = 90,
+                step = 5,
                 value = 30,
             ),
             sliderInput(
