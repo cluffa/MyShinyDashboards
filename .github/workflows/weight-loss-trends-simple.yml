@@ -1,12 +1,12 @@
-name: Push Weight-Loss-Trends-V2
+name: Push Weight-Loss-Trends-Simple
 
 on:
   push:
     branches:
       - main
     paths:
-      - Weight-Loss-Trends-V2/**
-      - .github/workflows/weight-loss-trends-V2.yml
+      - Weight-Loss-Trends-Simple/**
+      - .github/workflows/weight-loss-trends-simple.yml
       - Dockerfile
 
 jobs:
@@ -32,7 +32,7 @@ jobs:
       - name: Deploy With rsconnect
         run: >
           docker run
-          -e DIR=Weight-Loss-Trends-V2
+          -e DIR=Weight-Loss-Trends-Simple
           -e TOKEN=${{secrets.TOKEN}}
           -e SECRET=${{secrets.SECRET}}
           -v "$(pwd)"/:/workdir

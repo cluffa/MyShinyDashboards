@@ -1,6 +1,45 @@
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
+
 library(shiny)
 
-function(input, output, session) {
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+    titlePanel(NULL),
+    sidebarLayout(
+        sidebarPanel(
+            div(
+                style="display:inline-block",
+                numericInput(
+                    inputId="months", 
+                    label="Number of months shown", 
+                    value = 6
+                )
+            ),
+            div(
+                style="display:inline-block",
+                numericInput(
+                    inputId="span",
+                    label="Span of linear model in days", 
+                    value = 28
+                )
+            )
+        ),
+        
+        mainPanel(
+            plotOutput("distPlot")
+        )
+    )
+)
+
+# Define server logic required to draw a histogram
+server <- function(input, output, session) {
     library(ggplot2)
     library(readr)
     library(dplyr)
@@ -43,13 +82,13 @@ function(input, output, session) {
             geom_point(
                 aes(y = weight, color = modeled),
                 show.legend = FALSE,
-                ) +
+            ) +
             geom_abline(
                 slope = slope(),
                 intercept = intercept(),
                 color = "red",
                 linetype = "dashed"
-                ) +
+            ) +
             theme_minimal() +
             geom_label(
                 x = mean(df_trunc()$date),
@@ -59,8 +98,8 @@ function(input, output, session) {
             ) +
             scale_color_manual(values=c("gray", "black"))
     })
-
+    
 }
 
-
-
+# Run the application 
+shinyApp(ui = ui, server = server)
