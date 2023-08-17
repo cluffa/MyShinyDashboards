@@ -1,0 +1,40 @@
+name: Push Weight-Loss-Trends
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Weight-Loss-Trends-V2/**
+      - .github/workflows/weight-loss-trends-V2.yml
+      - Dockerfile
+
+jobs:
+  Deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          load: true
+          tags: shiny-push:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy With rsconnect
+        run: >
+          docker run
+          -e DIR=Weight-Loss-Trends-V2
+          -e TOKEN=${{secrets.TOKEN}}
+          -e SECRET=${{secrets.SECRET}}
+          -v "$(pwd)"/:/workdir
+          shiny-push:latest
+          Rscript deploy.R

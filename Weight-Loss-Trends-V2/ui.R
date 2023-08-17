@@ -1,21 +1,25 @@
 library(shiny)
 
 fluidPage(
-
-    titlePanel("Weight Loss Trends"),
-
+    titlePanel(NULL),
     sidebarLayout(
         sidebarPanel(
-            sliderInput("months",
-                        "Number of months:",
-                        min = 1,
-                        max = 50,
-                        value = 6),
-            sliderInput("span",
-                        "span of exponential avg",
-                        min = 1,
-                        max = 50,
-                        value = 6),
+            div(
+                style="display:inline-block",
+                numericInput(
+                    inputId="months", 
+                    label="Number of months shown", 
+                    value = 6
+                )
+            ),
+            div(
+                style="display:inline-block",
+                numericInput(
+                    inputId="span",
+                    label="Span of linear model in days", 
+                    value = 28
+                )
+            )
         ),
 
         mainPanel(

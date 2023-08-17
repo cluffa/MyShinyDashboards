@@ -5,9 +5,8 @@ function(input, output, session) {
     library(readr)
     library(dplyr)
     library(lubridate)
-    library(zoo)
     
-    df <- {read_csv(
+    df <- read_csv(
         "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
         col_names = c("date", "weight"),
         col_types = "cn---",
@@ -15,29 +14,50 @@ function(input, output, session) {
         lazy = TRUE
     ) |> mutate(
         date = as_datetime(date) |> force_tz(tzone = "EST")
-    ) |> arrange(
-        date
     ) |> select(
         date,
         weight
-    )}
+    )
     
+    df_trunc <- reactive({
+        df %>% 
+            filter(date >= Sys.Date() - months(input$months)) %>%
+            mutate(modeled = date >= Sys.Date() - days(input$span))
+    })
     
+    model <- reactive({
+        lm(weight ~ date, data = df_trunc(), subset = df_trunc()$modeled)
+    })
     
+    intercept <- reactive({
+        model()$coefficients[1]
+    })
     
-    # result_df <- data.frame(date = index(rolling_exp_avg), weight = coredata(rolling_exp_avg))
-
+    slope <- reactive({
+        model()$coefficients[2]
+    })
+    
     output$distPlot <- renderPlot({
-        zoo_data <- zoo(df$weight, order.by = df$date)
-        rolling_exp_avg <- rollapply(zoo_data, input$span, function(x) mean(x, na.rm = TRUE), align = "right", fill = NA)
-        df$avgweight <- coredata(rolling_exp_avg)
-        
-        df %>%
-            filter(date >= Sys.Date() - months(input$months)) %>% 
+        df_trunc() %>%
             ggplot(aes(date)) +
-            geom_point(aes(y = weight)) +
-            geom_line(aes(y = avgweight)) +
-            theme_minimal()
+            geom_point(
+                aes(y = weight, color = modeled),
+                show.legend = FALSE,
+                ) +
+            geom_abline(
+                slope = slope(),
+                intercept = intercept(),
+                color = "red",
+                linetype = "dashed"
+                ) +
+            theme_minimal() +
+            geom_label(
+                x = mean(df_trunc()$date),
+                y = max(df_trunc()$weight),
+                aes(label = paste("losing", format(slope() * -604800, digits = 3), "lbs per week")),
+                color = "red"
+            ) +
+            scale_color_manual(values=c("gray", "black"))
     })
 
 }
