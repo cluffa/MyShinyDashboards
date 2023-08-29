@@ -19,7 +19,9 @@ ui <- fluidPage(
                 numericInput(
                     inputId="months", 
                     label="Number of months shown", 
-                    value = 6
+                    value = 3,
+                    min = 1,
+                    max = 36
                 )
             ),
             div(
@@ -60,8 +62,8 @@ server <- function(input, output, session) {
     
     df_trunc <- reactive({
         df %>% 
-            filter(date >= Sys.Date() - months(input$months)) %>%
-            mutate(modeled = date >= Sys.Date() - days(input$span))
+            filter(date >= Sys.Date() %m-% months(input$months)) %>%
+            mutate(modeled = date >= (Sys.Date() - days(input$span)))
     })
     
     model <- reactive({
