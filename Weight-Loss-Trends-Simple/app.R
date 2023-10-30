@@ -29,9 +29,19 @@ ui <- fluidPage(
                 numericInput(
                     inputId="span",
                     label="Span of linear model in days", 
-                    value = 28
+                    value = 28,
+                    step = 7,
+                    min = 7,
                 )
-            )
+            ),
+            # br(),
+            # div(
+            #     style="display:inline-block",
+            #     actionButton(
+            #         inputId = "update",
+            #         label = "update plot"
+            #     )
+            # )
         ),
         
         mainPanel(
@@ -60,15 +70,16 @@ server <- function(input, output, session) {
         weight
     )
     
+    # df_trunc <- eventReactive(input$update, {
     df_trunc <- reactive({
         df %>% 
             filter(date >= Sys.Date() %m-% months(input$months)) %>%
             mutate(modeled = date >= (Sys.Date() - days(input$span)))
-    })
+    }) |> bindCache(input$span, input$months)
     
     model <- reactive({
         lm(weight ~ date, data = df_trunc(), subset = df_trunc()$modeled)
-    })
+    }) |> bindCache(input$span, input$months)
     
     intercept <- reactive({
         model()$coefficients[1]
@@ -99,7 +110,7 @@ server <- function(input, output, session) {
                 color = "red"
             ) +
             scale_color_manual(values=c("gray", "black"))
-    })
+    }) |> bindCache(input$span, input$months)
     
 }
 
