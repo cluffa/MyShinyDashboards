@@ -5,7 +5,7 @@ library(reactable)
 library(shinyjs)
 library(shinyWidgets)
 
-GOALWEIGHT <- 200
+GOALWEIGHT <- 185
 
 ui <- dashboardPage(
     title = "Weight Loss Tracking Dashboard",
