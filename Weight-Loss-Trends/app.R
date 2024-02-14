@@ -7,6 +7,8 @@ library(shinyWidgets)
 
 GOALWEIGHT <- 185
 
+############################## UI ##############################################
+
 ui <- dashboardPage(
     title = "Weight Loss Tracking Dashboard",
     dashboardHeader(
@@ -110,14 +112,6 @@ ui <- dashboardPage(
                 # max = 90,
                 step = 5,
                 value = 30,
-            ),
-            sliderInput(
-                "mult",
-                label = "Adjust BMR activity multiplier:",
-                min = 1.0,
-                max = 1.75,
-                step = 0.01,
-                value = 1.20,
             )
         ),
         collapsed = FALSE
@@ -167,13 +161,6 @@ ui <- dashboardPage(
                 ),
                 tabPanel(
                     "Info",
-                    strong("BMR Activity Multiplier"),
-                    p("1.2 - Inactive Desk Job", style = "margin: 0px;"),
-                    p("1.375 - Low 1-3 days a week 1hr", style = "margin: 0px;"),
-                    p("1.55	- Medium 3-5 days a week 1hr", style = "margin: 0px;"),
-                    p("1.65 - Medium-high 6-7days a week 1hr", style = "margin: 0px;"),
-                    p("1.725 - High Twice a day heavy 1hr sessions", style = "margin: 0px;"),
-                    p("1.9 - Intense Athlete 1.5-2.5hr sessions or activities", style = "top-margin: 0px;"),
                     strong("BMR/TDEE Formula used"),
                     p("Mifflin-St Jeor equation", a(href = "https://pubmed.ncbi.nlm.nih.gov/2305711/", "https://pubmed.ncbi.nlm.nih.gov/2305711/")),
                     p("Men: (10 × weight in kg) + (6.25 × height in cm) - (5 × age in years) + 5"),
@@ -193,6 +180,9 @@ ui <- dashboardPage(
         )
     )} # body
 )
+
+
+################################## SERVER ######################################
 
 server <- function(input, output) {
     # library(Cairo)
@@ -215,6 +205,7 @@ server <- function(input, output) {
        (10 * weight * KGCONST) + (6.25 * HEIGHT) - (5 * AGE) + ifelse(isMale, 5, -161)
     }
     
+    # read in weight data
     df <- {read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
             col_names = c("date", "weight"),
@@ -230,6 +221,7 @@ server <- function(input, output) {
             weight
         )}
     
+    # read in losit data
     loseit <- {read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
             skip = 1,
@@ -240,12 +232,26 @@ server <- function(input, output) {
             food = if_else(food < 1100, NA_real_, food)
         )}
     
+    # prepare data
     get_loseit <- reactive({
         out <- loseit |> mutate(
-                bmr = mifflin(weight),
-                tdee = bmr * input$mult,
-                diff = food - tdee - exercise
+                tdee = if_else(
+                    is.na(garmin),
+                    mifflin(weight) * 1.4,
+                    garmin
+                ),
+                diff = if_else(
+                    is.na(garmin),
+                    food - tdee - exercise,
+                    food - garmin
+                ),
+                tdee_method = if_else(
+                    is.na(garmin),
+                    "Mifflin-St Jeor",
+                    "Garmin"
+                )
             )
+
         
         week <- out |>
             mutate(
@@ -280,10 +286,12 @@ server <- function(input, output) {
     
     df_desc <- arrange(df, desc(date))
 
+    # create a spline
     spl <- reactive({
         smooth.spline(df$date, df$weight, spar = input$smoothing)
     }) # |> bindCache(input$smoothing)
     
+
     pred <- reactive({
         rng_start <- floor_date(df$date[1], "days")
         rng_stop <- ceiling_date(tail(df$date, 1), "days")
@@ -291,6 +299,8 @@ server <- function(input, output) {
         predict(spl(), as.numeric(rng))
     }) # |> bindCache(spl())
     
+
+    # wait for changes in the date range type, then show/hide the appropriate inputs
     observeEvent(input$drType, {
         type = input$drType
         if(type == "Date Range Selector") {
@@ -311,6 +321,7 @@ server <- function(input, output) {
         }
     });
 
+    # get the data in the range
     get_date_range <- reactive({
         type <- input$drType
         
@@ -391,7 +402,7 @@ server <- function(input, output) {
                 alpha = 0.5
                 ) +
             geom_line(
-                aes(date, weekdiff),
+                aes(date, weekdiff, linetype = tdee_method),
                 data = loseit,
                 color = "darkgray"
             ) +
@@ -408,7 +419,9 @@ server <- function(input, output) {
             scale_y_continuous(
                 sec.axis = sec_axis(~ . / 500, name = "pounds per week", breaks = seq(-4, 4, by = 1)),
                 breaks = seq(-5000, 5000, by = 500)
-            )
+            ) + 
+            theme(legend.position = "bottom")
+
         
         return(p)
     }) # |> bindCache(get_loseit_in_range(), get_spline_pred_in_range(), sizePolicy = sizeGrowthRatio(width = 400, height = 400, growthRate = 1.1))
@@ -585,11 +598,9 @@ server <- function(input, output) {
             "\nGoal Projection:", as.character(gwdate),
             paste0("(", as.character(weeks), " Weeks)"),
             "\nAvg Daily Diff Based on Trend:", round(cals, 0),
-            "\nDays Not Tracked (NA Intake):", loseit$food |> is.na() |> sum(),
             "\nAvg Daily Intake:", food_mean |> round(),
-            "\nAvg Est. TDEE (BMR * Activity) + Exercise:", tdee_mean |> round(),
-            "\nAvg Daily Diff Based on Intake:", mean(loseit$diff) |> round(),
-            "\nEst. BMR Activity Mult.", paste0("(",input$mult," set):"), est_act |> round(2)
+            "\nAvg Est. TDEE:", tdee_mean |> round(),
+            "\nAvg Daily Diff Based on Intake:", mean(loseit$diff) |> round()
             )
     }) # |> bindCache(get_loseit(), get_model(), get_gw(), input$model30, input$fitdays, input$mult)
     
