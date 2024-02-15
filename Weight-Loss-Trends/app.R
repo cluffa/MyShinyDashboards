@@ -206,7 +206,7 @@ server <- function(input, output) {
     }
     
     # read in weight data
-    df <- {read_csv(
+    df <- read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1991942286&format=csv",
             col_names = c("date", "weight"),
             col_types = "cn---",
@@ -219,10 +219,10 @@ server <- function(input, output) {
         ) |> select(
             date,
             weight
-        )}
+        )
     
     # read in losit data
-    loseit <- {read_csv(
+    loseit <- read_csv(
             "https://docs.google.com/spreadsheets/d/151vhoZ-kZCnVfIQ7h9-Csq1rTMoIgsOsyj_vDRtDMn0/export?gid=1838432377&format=csv",
             skip = 1,
             col_names = c("date", "budget", "food", "exercise", "net", "difference", "weight", "weighed", "garmin", "protein", "sugar", "goal_deficit"),
@@ -230,7 +230,7 @@ server <- function(input, output) {
         ) |> mutate(
             date = as_datetime(date, format = "%m/%d/%y"),
             food = if_else(food < 1100, NA_real_, food)
-        )}
+        )
     
     # prepare data
     get_loseit <- reactive({
@@ -392,9 +392,19 @@ server <- function(input, output) {
     output$calPlot <- renderPlot({
         df <- get_spline_pred_in_range()
         loseit <- get_loseit_in_range()
+        ylimits <- c(
+            min(
+                quantile(remove_missing(loseit)$diff, 0.05),
+                min(loseit$weekdiff)
+            ),
+            max(
+                quantile(remove_missing(loseit)$diff, 0.85),
+                max(loseit$weekdiff)
+            )
+        )
+
         
         p <- ggplot(df) +
-
             geom_point(
                 aes(date, diff),
                 data = loseit,
@@ -405,10 +415,10 @@ server <- function(input, output) {
                 aes(date, weekdiff, linetype = tdee_method),
                 data = loseit,
                 color = "darkgray"
-            ) +
+                ) +
             geom_hline(
                 yintercept = 0,
-                color = "red"
+                color = "green"
                 ) +
             geom_line(
                 aes(date, cals),
@@ -417,10 +427,13 @@ server <- function(input, output) {
             theme_bw() +
             ylab("calories per day") +
             scale_y_continuous(
-                sec.axis = sec_axis(~ . / 500, name = "pounds per week", breaks = seq(-4, 4, by = 1)),
+                sec.axis = sec_axis(~ . / 500, name = "pounds per week", breaks = seq(-5, 5, by = 1)),
                 breaks = seq(-5000, 5000, by = 500)
             ) + 
-            theme(legend.position = "bottom")
+            theme(legend.position = "bottom") +
+            coord_cartesian(
+                ylim = ylimits
+            )
 
         
         return(p)
