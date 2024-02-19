@@ -1,0 +1,12 @@
+{
+    "https://api.shinyapps.io": {
+        "server_url": "https://api.shinyapps.io",
+        "filename": "/Users/alex/workspace/MyShinyDashboards/WLT-python",
+        "app_url": "https://cluffa.shinyapps.io/wlt-python/",
+        "app_id": 11271073,
+        "app_guid": null,
+        "title": "WLT-python",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}
